@@ -19,11 +19,15 @@ Buffer::~Buffer()
 
 void Buffer::read(void* data, int len)
 {
+    lock_guard<mutex> lock(_mutex);
+    if(len > _endPos)
+        len = _endPos;
     ::memcpy(data, _buffer, len);
 }
 
 void Buffer::write(void* data, int len)
 {
+    lock_guard<mutex> lock(_mutex);
     int newEndPos = _endPos + len;
     if(newEndPos > _size)
     {
@@ -45,6 +49,9 @@ void Buffer::write(void* data, int len)
 
 void Buffer::pickRead(void* data, int len)
 {
+    lock_guard<mutex> lock(_mutex);
+    if(len > _endPos)
+        len = _endPos;
     ::memcpy(data, _buffer, len);
     ::memcpy(_buffer, _buffer+len, _endPos-len);
     _endPos -= len;
@@ -52,11 +59,22 @@ void Buffer::pickRead(void* data, int len)
 
 void Buffer::attach(int len)
 {
-    _endPos += len;
+    lock_guard<mutex> lock(_mutex);
+
+    int newEnd = _endPos + len;
+    if(newEnd > _size)
+        newEnd = _size;
+
+    _endPos = newEnd;
 }
 
 void Buffer::abort(int len)
 {
+    lock_guard<mutex> lock(_mutex);
+
+    if(len > _endPos)
+        len = _endPos;
+        
     ::memcpy(_buffer, _buffer+len, _endPos-len);
     _endPos -= len;
 }

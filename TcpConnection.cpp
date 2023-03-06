@@ -9,6 +9,11 @@ _eventorPtr(make_shared<Eventor>(_socketPtr)),
 _loopPtr(loop),
 _SockBufferSize(1024)
 {
+    if (INVALID_SOCKET == _socketPtr->sockFD())
+        _state = Undefined;
+    else
+        _state = Connected;
+        
     _loopPtr->registerEventor(_eventorPtr);
 
     _sockReadBuffer = new char[_SockBufferSize];
@@ -31,13 +36,10 @@ void TcpConnection::setRead(int on)
 {
     int events=_eventorPtr->events();
     if(on)
-    {
         events &= Eventor::EventRead;
-    }
     else
-    {
         events &= ~Eventor::EventRead;
-    }
+
     _eventorPtr->setEvents(events);
     _eventorPtr->setReadCallback(std::bind(&TcpConnection::handleRead, shared_from_this()));
 }
@@ -46,13 +48,10 @@ void TcpConnection::setWrite(int on)
 {
     int events=_eventorPtr->events();
     if(on)
-    {
         events &= Eventor::EventWrite;
-    }
     else
-    {
         events &= ~Eventor::EventWrite;
-    }
+    
     _eventorPtr->setEvents(events);
     _eventorPtr->setWriteCallback(std::bind(&TcpConnection::handlWrite, shared_from_this()));
 }
@@ -85,7 +84,7 @@ void TcpConnection::write(void* data, int len)
 
 void TcpConnection::close()
 {
-    _socketPtr->close();
+    _loopPtr->execInLoop(std::bind(&TcpConnection::closeInLoop, shared_from_this()));
 }
 
 void TcpConnection::handleRead()
@@ -121,7 +120,10 @@ void TcpConnection::writeInLoop()
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
     _socketPtr->write(_sockWriteBuffer, minSize);   // TODO:no consider real write size
     if(_writeBuffer.endPos() > 0)
-    {
         _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
-    }
+}
+
+void TcpConnection::closeInLoop()
+{
+    _socketPtr->close();
 }

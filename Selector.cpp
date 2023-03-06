@@ -16,9 +16,7 @@ Selector::~Selector()
 void Selector::registerEventor(Eventor::EventorPtr eventor)
 {
     if(!_mapEventor.count(eventor->eid()))
-    {
         _mapEventor.emplace(pair(eventor->eid(), eventor));
-    }
 }
 
 void Selector::updateEventor(Eventor::EventorPtr eventor)
@@ -30,9 +28,7 @@ void Selector::unregisterEventor(Eventor::EventorPtr eventor)
 {
 
     if(_mapEventor.count(eventor->eid()))
-    {
         _mapEventor.erase(eventor->eid());
-    }
 }
 
 Selector::EventorPtrList Selector::select(long timeoutUS)
@@ -46,13 +42,9 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     for(auto && fdevt : _mapEventor)
     {
         if(fdevt.second->events() & Eventor::EventRead)
-        {
             FD_SET(fdevt.second->sockFD(), &readSet);
-        }
         if(fdevt.second->events() & Eventor::EventWrite)
-        {
             FD_SET(fdevt.second->sockFD(), &writeSet);
-        }
     }
 
     // select
@@ -72,19 +64,17 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     for(auto && fdevt : _mapEventor)
     {
         int revents=Eventor::EventNone;
+
         if(FD_ISSET(fdevt.second->sockFD(), &readSet))
-        {
             revents |= Eventor::EventRead;
-        }
+            
         if(FD_ISSET(fdevt.second->sockFD(), &writeSet))
-        {
             revents |= Eventor::EventWrite;
-        }
+
         fdevt.second->setRevents(revents);
+        
         if(revents!=Eventor::EventNone)
-        {
             activeList.emplace_back(fdevt.second);
-        }
     }
     return activeList;
 }

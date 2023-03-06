@@ -66,11 +66,8 @@ int Eventor::eid() const
 void Eventor::handleEvents()
 {
     if((_revents & EventRead) && _readCallback)
-    {
         _readCallback();
-    }
+
     if((_revents & EventWrite) && _writeCallback)
-    {
         _writeCallback();
-    }
 }

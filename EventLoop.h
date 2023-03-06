@@ -3,6 +3,7 @@
 
 #include "Selector.h"
 #include <functional>
+#include <mutex>
 
 
 namespace imitater
@@ -28,8 +29,9 @@ private:
 
     const int _timeoutUS; // defult 10000 us
     std::vector<FuncInLoop> funcInLoopList;
+    std::mutex _mutexFuncInLoop;
 
-    void funcInLoop();
+    void handleFuncInLoop();
 };
 }
 

@@ -19,39 +19,42 @@ void EventLoop::loop()
     while(!_exit)
     {
         Selector::EventorPtrList activeList = _selector.select(_timeoutUS);
+        
         for(auto && eventor : activeList)
-        {
             eventor->handleEvents();
-        }
 
-        funcInLoop();
+        handleFuncInLoop();
     }
 }
 
 void EventLoop::registerEventor(Eventor::EventorPtr eventor)
 {
-    _selector.registerEventor(eventor);
+    execInLoop(std::bind(&Selector::registerEventor, &_selector, eventor));
 }
 
 void EventLoop::updateEventor(Eventor::EventorPtr eventor)
 {
-    _selector.updateEventor(eventor);
+    execInLoop(std::bind(&Selector::updateEventor, &_selector, eventor));
 }
 
 void EventLoop::unregisterEventor(Eventor::EventorPtr eventor)
 {
-    _selector.unregisterEventor(eventor);
+    execInLoop(std::bind(&Selector::unregisterEventor, &_selector, eventor));
 }
 
 void EventLoop::execInLoop(FuncInLoop func)
 {
+    lock_guard<mutex> lock(_mutexFuncInLoop);
     funcInLoopList.emplace_back(func);
 }
 
-void EventLoop::funcInLoop()
+void EventLoop::handleFuncInLoop()
 {
     vector<FuncInLoop> doList;
-    doList.swap(funcInLoopList);
+    {
+        lock_guard lock(_mutexFuncInLoop);
+        doList.swap(funcInLoopList);
+    }
     for(auto && func : doList)
     {
         func();

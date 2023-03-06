@@ -31,10 +31,9 @@ void Acceptor::listen()
 void Acceptor::hadnleRead()
 {
     TcpConnection::TcpConnectionPtr newConn = acceptNewConnection();
+    
     if(_newConnectoinCallback)
-    {
         _newConnectoinCallback(newConn);
-    }
 }
 
 TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()

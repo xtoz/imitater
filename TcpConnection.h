@@ -17,6 +17,8 @@ public:
     typedef std::function<void(void)> WriteCallback;
     typedef std::function<void(void)> CloseCallback;
 
+    enum TcpConnState {Undefined, Connected, Closing, Closed};
+
     void setReadCallback(ReadCallback cb);
     void setWriteCallback(WriteCallback cb);
     void setCloseCallback(CloseCallback cb);
@@ -40,12 +42,14 @@ private:
     char* _sockWriteBuffer;
     Buffer _readBuffer;
     Buffer _writeBuffer;
+    TcpConnState _state;
 
     void handleRead();
     void handlWrite();
     void handleClose();
 
     void writeInLoop();
+    void closeInLoop();
 };
 }
 
