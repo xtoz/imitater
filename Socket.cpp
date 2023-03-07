@@ -123,3 +123,8 @@ int Socket::sockFD() const
 {
     return _sockfd;
 }
+
+bool Socket::isValid() const
+{
+    return _sockfd == INVALID_SOCKET;
+}

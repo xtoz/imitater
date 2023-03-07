@@ -19,34 +19,39 @@ public:
 
     enum TcpConnState {Undefined, Connected, Closing, Closed};
 
-    void setReadCallback(ReadCallback cb);
-    void setWriteCallback(WriteCallback cb);
-    void setCloseCallback(CloseCallback cb);
-
-    void setRead(int on);
+    void setReadCallback(ReadCallback cb);  // no consider about multi-thread, user should be careful. Why not consider? because we
+    void setWriteCallback(WriteCallback cb);// even do not know when user object destroied (and here do not require smart ptr), so
+    void setCloseCallback(CloseCallback cb);// consider multi-thread has no meaning.
+                                            //  Sugguest set callback null only when conn has closed, (close callback will exec
+                                            // when conn closed, you can set callback null after it).
+                                            // Whenever you set or replace callback is safe.
+    void setRead(int on);   // multi-thread considered
     void setWrite(int on);
 
-    void read(void* data, int len);
+    void read(void* data, int len); // multi-thread considered
     void write(void* data, int len);
     void close();
+    int state() const;
 
 private:
-    const Socket::SocketPtr _socketPtr;
-    const Eventor::EventorPtr _eventorPtr;
-    const EventLoop::EventLoopPtr _loopPtr;
+    const Socket::SocketPtr _socketPtr; // Acceptor pass this to conn, and will not share with other
+    const Eventor::EventorPtr _eventorPtr;  // will share this with eventloop.selector
+    const EventLoop::EventLoopPtr _loopPtr; // other share this with conn
     ReadCallback _readCallback;
     WriteCallback _writeCallback;
     CloseCallback _closeCallback;
     const int _SockBufferSize;   // init 1024
-    char* _sockReadBuffer;  // consider [auto expand size when full] buffer to abort these variate;
-    char* _sockWriteBuffer;
+    char* _sockReadBuffer;  // consider [auto expand size when full] buffer to abort this;
+    char* _sockWriteBuffer; // consider [pass pointer of _writeBuffur] to abort this;
     Buffer _readBuffer;
     Buffer _writeBuffer;
-    TcpConnState _state;
+    TcpConnState _state;    // only use in loop func (include IO loop func and execInLoop func)
 
     void handleRead();
     void handlWrite();
     void handleClose();
+
+    void updateEventsInLoop(int events);
 
     void writeInLoop();
     void closeInLoop();

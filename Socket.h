@@ -22,6 +22,7 @@ public:
     void close();
 
     int sockFD() const;
+    bool isValid() const;
 
 private:
     
