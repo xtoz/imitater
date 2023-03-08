@@ -1,4 +1,5 @@
 #include "Socket.h"
+#include "Logger.h"
 #include <io.h>
 
 using namespace imitater;
@@ -11,9 +12,9 @@ const unsigned short Socket::DEFAULT_PORT = 8888;
 Socket::Socket()
 {
     _sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-    if(INVALID_SOCKET == _sockfd)
+    if(!isValid())
     {
-        // TODO:error
+        LOG_ERROR << "create invalid socket.";
     }
     unsigned long ul = 1;
     // ioctlsocket(SOCKET s, long cmd, u_long FAR* argp);
@@ -22,7 +23,7 @@ Socket::Socket()
     // FIONBIO：允许或禁止套接口的非阻塞模式。argp指向一个无符号长整型。如允许非阻塞模式则非零，如禁止非阻塞模式则为零。
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        // TODO:error
+        LOG_ERROR << "set noblock socket fail.";
     }
 }
 
@@ -38,7 +39,7 @@ _addr(_addr)
     unsigned long ul = 1;
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        // TODO:error
+        LOG_ERROR << "set noblock socket fail.";
     }
 }
 
@@ -47,7 +48,7 @@ void Socket::listen(unsigned short port, int maxConn)
     bind(nullptr, DEFAULT_PORT);
     if(SOCKET_ERROR == ::listen(_sockfd, DEFAULT_MAX_CONN))
     {
-        // TODO:error
+        LOG_ERROR << "start listen fail.";
     }
 }
 
@@ -58,7 +59,7 @@ Socket::SocketPtr Socket::accept()
     int conn = ::accept(_sockfd, (sockaddr*)&addr, &size);
     if (INVALID_SOCKET == conn)
     {
-        // TODO:error
+        LOG_ERROR << "accept a invalid socket.";
     }
     Socket::SocketPtr connSock = make_shared<Socket>(conn, addr);
     return connSock;
@@ -71,7 +72,7 @@ void Socket::bind(const char* host, unsigned short port)
     _addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if(SOCKET_ERROR == ::bind(_sockfd, (sockaddr*)&_addr, sizeof(_addr)))
     {
-        // TODO:error
+        LOG_ERROR << "bind socket fail.";
     }
 }
 
@@ -80,17 +81,15 @@ int Socket::read(void* data, int len)
     int size = ::recv(_sockfd, (char*)data, len, 0);
 	if(-1 == size)
     {
-		// TODO:error
+		LOG_ERROR << "recieve data fail.";
 	}
     else if (0 == size)
     {
-        // TODO:log
-        // in select mode, means close
+        LOG_NORMAL << "socket closed.";
     }
     else
     {
-		// TODO:log
-        // success
+		LOG_NORMAL << "recieve data.";
 	}
     return size;
 }
@@ -100,16 +99,15 @@ int Socket::write(void* data, int len)
     int size = ::send(_sockfd, (char*)data, len, 0);
     if(-1 == size)
     {
-        // TODO:error
+        LOG_ERROR << "send data fail.";
     }
     else if(len == size)
     {
-        // TODO:log
-        // success
+        LOG_NORMAL << "send data success.";
     }
     else
     {
-        //TODO: partial success, remain 'len - size' data
+        LOG_ERROR << "send data part fail part success.";
     }
     return size;
 }
@@ -126,5 +124,5 @@ int Socket::sockFD() const
 
 bool Socket::isValid() const
 {
-    return _sockfd == INVALID_SOCKET;
+    return _sockfd != INVALID_SOCKET;
 }

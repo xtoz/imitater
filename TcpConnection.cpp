@@ -17,7 +17,7 @@ TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr l
     _writeCallback = nullptr;
     _closeCallback = nullptr;
 
-    if (_socketPtr->isValid())
+    if (!_socketPtr->isValid())
     {
         _state = Undefined;
         // TODO:error
