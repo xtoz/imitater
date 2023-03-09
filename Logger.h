@@ -61,6 +61,7 @@ public:
         Logger::getInstace()->log({_prefix, str});
         return *this;
     }
+    
 private:
     char _prefix[PREFIX_LEN];
 };

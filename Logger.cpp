@@ -4,12 +4,12 @@
 using namespace imitater;
 using namespace std;
 
-Logger* Logger::loggerInstance = nullptr;
+Logger* Logger::loggerInstance = new Logger(); // consider multi-thread;
 
 Logger* Logger::getInstace()
 {
     if(nullptr == loggerInstance)
-        loggerInstance = new Logger();
+        loggerInstance = new Logger();  // in theory, this cannot exec.
     return loggerInstance;
 }
 
