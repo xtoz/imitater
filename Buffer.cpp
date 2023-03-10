@@ -1,4 +1,5 @@
 #include "Buffer.h"
+#include "Logger.h"
 #include <string.h>
 #include <iostream>
 using namespace imitater;
@@ -7,9 +8,10 @@ using namespace std;
 Buffer::Buffer()
 {
     _size = 1024;
-    _endPos = 0;
+    _head = 0;
+    _tail = 0;
     _buffer = new char[_size];
-    ::memset(_buffer, 0, _size);
+    memset(_buffer, 0, _size);
 }
 
 Buffer::~Buffer()
@@ -20,63 +22,66 @@ Buffer::~Buffer()
 void Buffer::read(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
-    if(len > _endPos)
-        len = _endPos;
-    ::memcpy(data, _buffer, len);
+    if(len > _tail - _head)
+        len = _tail - _head;
+    memcpy(data, _buffer + _head, len);
 }
 
 void Buffer::write(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
-    int newEndPos = _endPos + len;
-    if(newEndPos > _size)
+
+    if(len > _tail - _head)
+        len = _tail - _head;
+    
+    if(_tail + len > _size)
     {
-        int newSize = ((newEndPos / 1024) + 1) * 1024;
+        int newSize = _size * 2;
         char* newBuffer = new char[newSize];
         if (nullptr == newBuffer)
         {
-            // TODO:error
+            LOG_ERROR << "buffer expand fail.";
+            return;
         }
-        ::memset(newBuffer, 0, newSize);
-        ::memcpy(newBuffer, _buffer, _endPos);
+        memset(newBuffer, 0, newSize);
+        memcpy(newBuffer, _buffer + _head, _tail - _head);
         delete[] _buffer;
         _buffer = newBuffer;
         _size = newSize;
     }
-    ::memcpy(_buffer + _endPos, data, len);
-    _endPos = newEndPos;
+    memcpy(_buffer + _head, data, len);
+    _tail += len;
 }
 
 void Buffer::pickRead(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
-    if(len > _endPos)
-        len = _endPos;
-    ::memcpy(data, _buffer, len);
-    ::memcpy(_buffer, _buffer+len, _endPos-len);
-    _endPos -= len;
+    if(len > _tail - _head)
+        len = _tail - _head;
+    memcpy(data, _buffer + _head, len);
+    _head += len;
+    if(_head == _tail)
+        _head = _tail = 0;
 }
 
 void Buffer::attach(int len)
 {
     lock_guard<mutex> lock(_mutex);
 
-    int newEnd = _endPos + len;
-    if(newEnd > _size)
-        newEnd = _size;
-
-    _endPos = newEnd;
+    if(_tail + len > _size)
+        _tail = _size;
+    else
+        _tail += len;
 }
 
 void Buffer::abort(int len)
 {
     lock_guard<mutex> lock(_mutex);
 
-    if(len > _endPos)
-        len = _endPos;
-        
-    ::memcpy(_buffer, _buffer+len, _endPos-len);
-    _endPos -= len;
+    if(len > _tail - _head)
+        _head = _tail = 0;
+    else
+        _head += len;
 }
 
 int Buffer::size() const
@@ -84,7 +89,7 @@ int Buffer::size() const
     return _size;
 }
 
-int Buffer::endPos() const
+int Buffer::len() const
 {
-    return _endPos;
+    return _tail - _head;
 }

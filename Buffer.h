@@ -18,11 +18,12 @@ public:
     void abort(int len);
 
     int size() const;
-    int endPos() const; // real size
+    int len() const; // real size
 private:
     char* _buffer;
     int _size;  // initiate 1024 bytes
-    int _endPos;
+    int _head;
+    int _tail;
     std::mutex _mutex;
 };
 }
