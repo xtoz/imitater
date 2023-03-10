@@ -1,1 +1,1 @@
-imitater 模仿者，是宝开公司《植物大战僵尸》中的一种植物，可以变身为其它植物，项目命名为模仿者，即为模仿 chenshuo 大佬的 muduo 网络库（https://github.com/chenshuo/muduo）。请不要参考里面任何的代码实现，除非你想学习如何写出糟糕的代码。
+imitater 模仿者，是宝开公司《植物大战僵尸》中的一种植物，可以变身为其它植物，项目命名为模仿者，即为模仿 chenshuo 大佬的 [muduo 网络库](https://github.com/chenshuo/muduo)。请不要参考本项目中的任何代码实现，除非你想学习如何写出糟糕的代码。
