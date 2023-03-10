@@ -25,6 +25,7 @@ private:
     NewConnectionCallback _newConnectoinCallback;
 
     void hadnleRead();
+    void listenInLoop();
     TcpConnection::TcpConnectionPtr acceptNewConnection();
 };
 }

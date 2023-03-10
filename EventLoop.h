@@ -18,7 +18,7 @@ public:
     typedef std::function<void(void)> FuncInLoop;
 
     void loop();
-    void registerEventor(Eventor::EventorPtr eventor);
+    void registerEventor(Eventor::EventorPtr eventor);  // function provided by eventloop must be multi-thread.
     void updateEventor(Eventor::EventorPtr eventor);
     void unregisterEventor(Eventor::EventorPtr eventor);
     void execInLoop(FuncInLoop func);

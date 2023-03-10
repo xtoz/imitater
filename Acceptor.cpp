@@ -13,7 +13,7 @@ _loopPtr(loop)
 
 Acceptor::~Acceptor()
 {
-    _loopPtr->unregisterEventor(_eventorPtr);
+    _loopPtr->unregisterEventor(_eventorPtr);   // do not worry, this is a shared_ptr
 }
 
 void Acceptor::setNewConnectionCallback(NewConnectionCallback cb)
@@ -23,9 +23,7 @@ void Acceptor::setNewConnectionCallback(NewConnectionCallback cb)
 
 void Acceptor::listen()
 {
-    _eventorPtr->setReadCallback(std::bind(&Acceptor::hadnleRead, shared_from_this()));
-    _eventorPtr->setEvents(Eventor::EventRead);
-    _socketPtr->listen();
+    _loopPtr->execInLoop(std::bind(&Acceptor::listenInLoop, shared_from_this()));
 }
     
 void Acceptor::hadnleRead()
@@ -34,6 +32,18 @@ void Acceptor::hadnleRead()
     
     if(_newConnectoinCallback)
         _newConnectoinCallback(newConn);
+}
+
+void Acceptor::listenInLoop()
+{
+    function<void(void)> callback = [weakObj = weak_from_this()]()
+    {
+        if (auto obj = weakObj.lock())
+            obj->hadnleRead();
+    };
+    _eventorPtr->setReadCallback(callback);
+    _eventorPtr->setEvents(Eventor::EventRead);
+    _socketPtr->listen();
 }
 
 TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
