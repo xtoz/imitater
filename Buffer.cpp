@@ -21,6 +21,9 @@ Buffer::~Buffer()
 
 void Buffer::read(void* data, int len)
 {
+    if (len < 0)
+        return;
+
     lock_guard<mutex> lock(_mutex);
 
     if(len > _tail - _head)
@@ -30,6 +33,9 @@ void Buffer::read(void* data, int len)
 
 void Buffer::write(void* data, int len)
 {
+    if (len < 0)
+        return;
+
     lock_guard<mutex> lock(_mutex);
     
     if(_tail + len > _size)
@@ -53,6 +59,9 @@ void Buffer::write(void* data, int len)
 
 void Buffer::pickRead(void* data, int len)
 {
+    if (len < 0)
+        return;
+
     lock_guard<mutex> lock(_mutex);
 
     if(len > _tail - _head)
@@ -65,6 +74,9 @@ void Buffer::pickRead(void* data, int len)
 
 void Buffer::attach(int len)
 {
+    if (len < 0)
+        return;
+
     lock_guard<mutex> lock(_mutex);
 
     if(_tail + len > _size)
@@ -75,6 +87,9 @@ void Buffer::attach(int len)
 
 void Buffer::abort(int len)
 {
+    if (len < 0)
+        return;
+        
     lock_guard<mutex> lock(_mutex);
 
     if(len > _tail - _head)
