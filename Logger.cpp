@@ -19,8 +19,8 @@ LoggerAgent::LoggerAgent(const char* fileName, char codeLine, const char* functi
     strftime(_prefix, PREFIX_LEN, "%Y-%m-%d %H:%M:%S", now_tm);
 
     // construct prefix: time + file + codeline
-    sprintf_s(_prefix + strlen(_prefix), sizeof(_prefix), ", level: %s, file: %s, line: %c, function: %s. ",
-     levelToStr(level), fileName, codeLine, function);
+    sprintf_s(_prefix + strlen(_prefix), sizeof(_prefix), ", Level: %s, File: %s, Line: %c, Function: %s. Content: ",
+              levelToStr(level), fileName, codeLine, function);
 }
 
 const char *LoggerAgent::levelToStr(LoggerAgent::LogLevel level)
@@ -40,9 +40,10 @@ const char *LoggerAgent::levelToStr(LoggerAgent::LogLevel level)
     }
 }
 
-LoggerAgent& LoggerAgent::operator<<(const char *str)
+LoggerAgent& LoggerAgent::operator<<(const char *log)
 {
-    Logger::getInstace()->log({_prefix, str});
+    sprintf_s(_prefix + strlen(_prefix), sizeof(_prefix), "%s", log);
+    Logger::getInstace()->log({_prefix});
     return *this;
 }
 

@@ -33,7 +33,7 @@ public:
 
     const char* levelToStr(LogLevel level);
 
-    LoggerAgent& operator<<(const char* str);
+    LoggerAgent& operator<<(const char* log);
     
 private:
     char _prefix[PREFIX_LEN];
