@@ -166,11 +166,11 @@ void TcpConnection::writeInLoop()
 {
     if (_state != Connected)
         return;
-    int size = _writeBuffer.endPos();
-    int minSize = ::min(size, _SockBufferSize);
+    int size = _writeBuffer.size();
+    int minSize = min(size, _SockBufferSize);
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
-    _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider real write size
-    if (_writeBuffer.endPos() > 0)
+    _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider how much data real be written in socket write
+    if (_writeBuffer.size() > 0)
         _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
 

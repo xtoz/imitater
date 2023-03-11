@@ -17,14 +17,15 @@ public:
     void attach(int len);   // just postpone endpos
     void abort(int len);
 
-    int size() const;
-    int len() const; // real size
+    int size() const; // content size
 private:
     char* _buffer;
     int _size;  // initiate 1024 bytes
     int _head;
     int _tail;
     std::mutex _mutex;
+
+    int maxSize() const;   // max size
 };
 }
 

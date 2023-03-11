@@ -22,6 +22,7 @@ Buffer::~Buffer()
 void Buffer::read(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
+
     if(len > _tail - _head)
         len = _tail - _head;
     memcpy(data, _buffer + _head, len);
@@ -30,13 +31,10 @@ void Buffer::read(void* data, int len)
 void Buffer::write(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
-
-    if(len > _tail - _head)
-        len = _tail - _head;
     
     if(_tail + len > _size)
     {
-        int newSize = _size * 2;
+        int newSize = (((_tail + len) / 1024) + 1) * 1024;
         char* newBuffer = new char[newSize];
         if (nullptr == newBuffer)
         {
@@ -56,6 +54,7 @@ void Buffer::write(void* data, int len)
 void Buffer::pickRead(void* data, int len)
 {
     lock_guard<mutex> lock(_mutex);
+
     if(len > _tail - _head)
         len = _tail - _head;
     memcpy(data, _buffer + _head, len);
@@ -84,12 +83,12 @@ void Buffer::abort(int len)
         _head += len;
 }
 
-int Buffer::size() const
+int Buffer::maxSize() const
 {
     return _size;
 }
 
-int Buffer::len() const
+int Buffer::size() const
 {
     return _tail - _head;
 }
