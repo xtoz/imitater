@@ -1,4 +1,5 @@
 #include "Selector.h"
+#include "Logger.h"
 
 using namespace imitater;
 using namespace std;
@@ -33,6 +34,8 @@ void Selector::unregisterEventor(Eventor::EventorPtr eventor)
 
 Selector::EventorPtrList Selector::select(long timeoutUS)
 {
+    EventorPtrList activeList;
+
     // set events
     fd_set readSet;
     fd_set writeSet;
@@ -52,15 +55,17 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     int ret = ::select(0, &readSet, &writeSet, nullptr, &timeout);
     if(0 == ret)
     {
-        // TODO:log
+        return activeList;
     }
     else if(-1 == ret)
     {
-        // TODO:error
+        LOG_ERROR << "select return -1.";
+        return activeList;
     }
 
+    LOG_NORMAL << "select return > 0.";
+
     // fill active eventor
-    EventorPtrList activeList;
     for(auto && fdevt : _mapEventor)
     {
         int revents=Eventor::EventNone;

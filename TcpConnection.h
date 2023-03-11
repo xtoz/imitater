@@ -22,9 +22,9 @@ public:
     void setReadCallback(ReadCallback cb);  // no consider about multi-thread, user should be careful. Why not consider? because we
     void setWriteCallback(WriteCallback cb);// even do not know when user object destroied (and here do not require smart ptr), so
     void setCloseCallback(CloseCallback cb);// consider multi-thread has no meaning.
-                                            //  Sugguest set callback null only when conn has closed, (close callback will exec
+                                            // Sugguest set callback null only when conn has closed, (close callback will exec
                                             // when conn closed, you can set callback null after it).
-                                            // Whenever you set or replace callback is safe.
+                                            // In theory, set callback form null to exist is safe.
     void setRead(int on);   // multi-thread considered
     void setWrite(int on);
 

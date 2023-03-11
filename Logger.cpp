@@ -10,7 +10,7 @@ using namespace std;
 
 LoggerAgent::LoggerAgent(const char* fileName, char codeLine, const char* function, LogLevel level)
 {
-    ::memset(_prefix, PREFIX_LEN, '\0');
+    ::memset(_prefix, '\0', PREFIX_LEN);
 
     // system time str
     chrono::system_clock::time_point now = chrono::system_clock::now();
@@ -18,7 +18,7 @@ LoggerAgent::LoggerAgent(const char* fileName, char codeLine, const char* functi
     tm* now_tm = std::localtime(&now_time);
     strftime(_prefix, PREFIX_LEN, "%Y-%m-%d %H:%M:%S", now_tm);
 
-    // construct prefix: time + file + codeline
+    // construct prefix: time + file + codeline + function
     sprintf_s(_prefix + strlen(_prefix), sizeof(_prefix), ", Level: %s, File: %s, Line: %c, Function: %s. Content: ",
               levelToStr(level), fileName, codeLine, function);
 }
@@ -43,7 +43,7 @@ const char *LoggerAgent::levelToStr(LoggerAgent::LogLevel level)
 LoggerAgent& LoggerAgent::operator<<(const char *log)
 {
     sprintf_s(_prefix + strlen(_prefix), sizeof(_prefix), "%s", log);
-    Logger::getInstace()->log({_prefix});
+    Logger::getInstace()->log(_prefix);
     return *this;
 }
 
@@ -72,9 +72,7 @@ Logger::~Logger()
 
 }
 
-void Logger::log(initializer_list<const char*> il)
+void Logger::log(const char* log)
 {
-    for (auto iter = il.begin(); iter != il.end(); ++iter)
-		cout << *iter;
-	cout << endl;
+	cout << log << endl;
 }

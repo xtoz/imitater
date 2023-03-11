@@ -4,7 +4,7 @@ using namespace imitater;
 using namespace std;
 
 EventLoop::EventLoop():
-_timeoutUS(100000)
+_timeoutUS(100000 * 10)
 {
     _exit = false;
 }

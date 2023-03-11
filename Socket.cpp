@@ -1,6 +1,8 @@
 #include "Socket.h"
 #include "Logger.h"
 #include <io.h>
+#include <string>
+#include <iostream>
 
 using namespace imitater;
 using namespace std;
@@ -14,7 +16,8 @@ Socket::Socket()
     _sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(!isValid())
     {
-        LOG_ERROR << "create invalid socket.";
+        string log = "create invalid socket, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
     unsigned long ul = 1;
     // ioctlsocket(SOCKET s, long cmd, u_long FAR* argp);
@@ -23,12 +26,18 @@ Socket::Socket()
     // FIONBIO：允许或禁止套接口的非阻塞模式。argp指向一个无符号长整型。如允许非阻塞模式则非零，如禁止非阻塞模式则为零。
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        LOG_ERROR << "set noblock socket fail.";
+        string log = "set noblock socket fail, fd:";
+        LOG_ERROR << log.c_str();
     }
+
+    string log = "a socket constructed, fd:" + to_string(_sockfd);
+    LOG_NORMAL << log.c_str();
 }
 
 Socket::~Socket()
 {
+    string log = "a socket deconstructed, fd:" + to_string(_sockfd);
+    LOG_NORMAL << log.c_str();
     close();
 }
 
@@ -36,11 +45,20 @@ Socket::Socket(int sockfd, sockaddr_in addr) :
 _sockfd(sockfd),
 _addr(_addr)
 {
+    if (!isValid())
+    {
+        string log = "a socket init with a invalid fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
+    }
     unsigned long ul = 1;
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        LOG_ERROR << "set noblock socket fail.";
+        string log = "set noblock socket fail, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
+
+    string log = "a socket constructed with fd:" + to_string(_sockfd);
+    LOG_NORMAL << log.c_str();
 }
 
 void Socket::listen(unsigned short port, int maxConn)
@@ -48,7 +66,8 @@ void Socket::listen(unsigned short port, int maxConn)
     bind(nullptr, DEFAULT_PORT);
     if(SOCKET_ERROR == ::listen(_sockfd, DEFAULT_MAX_CONN))
     {
-        LOG_ERROR << "start listen fail.";
+        string log = "start listen fail, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
 }
 
@@ -59,7 +78,8 @@ Socket::SocketPtr Socket::accept()
     int conn = ::accept(_sockfd, (sockaddr*)&addr, &size);
     if (INVALID_SOCKET == conn)
     {
-        LOG_ERROR << "accept a invalid socket.";
+        string log = "accept a invalid socket, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
     Socket::SocketPtr connSock = make_shared<Socket>(conn, addr);
     return connSock;
@@ -72,7 +92,8 @@ void Socket::bind(const char* host, unsigned short port)
     _addr.sin_addr.s_addr = htonl(INADDR_ANY);
     if(SOCKET_ERROR == ::bind(_sockfd, (sockaddr*)&_addr, sizeof(_addr)))
     {
-        LOG_ERROR << "bind socket fail.";
+        string log = "socket bind fail, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
 }
 
@@ -81,15 +102,18 @@ int Socket::read(void* data, int len)
     int size = ::recv(_sockfd, (char*)data, len, 0);
 	if(-1 == size)
     {
-		LOG_ERROR << "recieve data fail.";
+        string log = "recieve data size < 0, fd:" + to_string(_sockfd);
+		LOG_WARN << log.c_str();
 	}
     else if (0 == size)
     {
-        LOG_NORMAL << "socket closed.";
+        string log = "recieve data size = 0, fd:" + to_string(_sockfd);
+        LOG_WARN << log.c_str();
     }
     else
     {
-		LOG_NORMAL << "recieve data.";
+        string log = "recieve data size > 0, fd:" + to_string(_sockfd);
+		LOG_NORMAL << log.c_str();
 	}
     return size;
 }
@@ -99,21 +123,26 @@ int Socket::write(void* data, int len)
     int size = ::send(_sockfd, (char*)data, len, 0);
     if(-1 == size)
     {
-        LOG_ERROR << "send data fail.";
+        string log = "send data size > 0, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
     else if(len == size)
     {
-        LOG_NORMAL << "send data success.";
+        string log = "send data size success, fd:" + to_string(_sockfd);
+        LOG_NORMAL << log.c_str();
     }
     else
     {
-        LOG_ERROR << "send data part fail part success.";
+        string log = "send part data, fd:" + to_string(_sockfd);
+        LOG_ERROR << log.c_str();
     }
     return size;
 }
 
 void Socket::close()
 {
+    string log = "a socket close, fd:" + to_string(_sockfd);
+    LOG_NORMAL << log.c_str();
     ::closesocket(_sockfd);
 }
 

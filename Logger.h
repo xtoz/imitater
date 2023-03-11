@@ -5,7 +5,7 @@
 #include <initializer_list>
 
 
-#define PREFIX_LEN 200
+#define PREFIX_LEN 500
 
 namespace imitater
 {
@@ -15,7 +15,7 @@ public:
     static Logger* getInstace();
     static void release();
 
-    void log(std::initializer_list<const char*> il);
+    void log(const char* log);
 
 private:
     Logger();

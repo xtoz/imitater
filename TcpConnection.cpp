@@ -1,4 +1,5 @@
 #include "TcpConnection.h"
+#include "Logger.h"
 
 using namespace imitater;
 using namespace std;
@@ -19,12 +20,13 @@ TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr l
 
     if (!_socketPtr->isValid())
     {
-        _state = Undefined;
-        // TODO:error
+        // _state = Undefined;
+        LOG_WARN << "a new tcpconnection constructed with a invalid socket.";
     }
     else
     {
-        _state = Connected;
+        // _state = Connected;
+        LOG_NORMAL << "new tcpconnection constructed.";
     }
 }
 
@@ -35,13 +37,15 @@ TcpConnection::~TcpConnection()
 
     delete[] _sockReadBuffer;
     delete[] _sockWriteBuffer;
+
+    LOG_NORMAL << "a tcpconnection deconstructed.";
 }
 
 void TcpConnection::setRead(int on)
 {
     int events = _eventorPtr->events();
     if (on)
-        events &= Eventor::EventRead;
+        events |= Eventor::EventRead;
     else
         events &= ~Eventor::EventRead;
 
@@ -52,7 +56,7 @@ void TcpConnection::setWrite(int on)
 {
     int events = _eventorPtr->events();
     if (on)
-        events &= Eventor::EventWrite;
+        events |= Eventor::EventWrite;
     else
         events &= ~Eventor::EventWrite;
 
@@ -81,8 +85,8 @@ void TcpConnection::read(void *data, int len)
 
 void TcpConnection::write(void *data, int len)
 {
-    if (_state != Connected)
-        return;
+    // if (_state != Connected)
+    //     return;
     _writeBuffer.write(data, len);
     _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
@@ -99,10 +103,10 @@ int TcpConnection::state() const
 
 void TcpConnection::handleRead()
 {
-    if (_state != Connected)
-        return;
+    // if (_state != Connected)
+    //     return;
     int size = _socketPtr->read(_sockReadBuffer, _SockBufferSize);
-    if (!size) // on windows sys, read event with no message means socket close
+    if (size <= 0) // on windows sys, read event with size <= 0 means socket close
     {
         handleClose();
     }
@@ -116,23 +120,25 @@ void TcpConnection::handleRead()
 
 void TcpConnection::handlWrite()
 {
-    if (_state != Connected)
-        return;
+    // if (_state != Connected)
+    //     return;
 }
 
 void TcpConnection::handleClose()
 {
-    if (_state == Closed)
-        return;
-    _state = Closed;
+    // if (_state == Closed)
+    //     return;
+    // _state = Closed;
+    _socketPtr->close();
+    _loopPtr->unregisterEventor(_eventorPtr);
     if (_closeCallback)
         _closeCallback();
 }
 
 void TcpConnection::updateEventsInLoop(int events)
 {
-    if (_state != Connected)
-        return;
+    // if (_state != Connected)
+    //     return;
     _eventorPtr->setEvents(events);
     if (events & Eventor::EventRead)
     {
@@ -164,10 +170,9 @@ void TcpConnection::updateEventsInLoop(int events)
 
 void TcpConnection::writeInLoop()
 {
-    if (_state != Connected)
-        return;
-    int size = _writeBuffer.size();
-    int minSize = min(size, _SockBufferSize);
+    // if (_state != Connected)
+    //     return;
+    int minSize = min(_writeBuffer.size(), _SockBufferSize);
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
     _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider how much data real be written in socket write
     if (_writeBuffer.size() > 0)
@@ -177,5 +182,4 @@ void TcpConnection::writeInLoop()
 void TcpConnection::closeInLoop()
 {
     handleClose();
-    _socketPtr->close();
 }
