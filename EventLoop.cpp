@@ -4,7 +4,7 @@ using namespace imitater;
 using namespace std;
 
 EventLoop::EventLoop():
-_timeoutUS(100000 * 10)
+_timeoutUS(100000)
 {
     _exit = false;
 }
@@ -46,6 +46,11 @@ void EventLoop::execInLoop(FuncInLoop func)
 {
     lock_guard<mutex> lock(_mutexFuncInLoop);
     funcInLoopList.emplace_back(func);
+}
+
+void EventLoop::unregisterEventorImidiate(Eventor::EventorPtr eventor)
+{
+    _selector.unregisterEventor(eventor);
 }
 
 void EventLoop::handleFuncInLoop()

@@ -13,7 +13,7 @@ _loopPtr(loop)
 
 Acceptor::~Acceptor()
 {
-    _loopPtr->unregisterEventor(_eventorPtr);   // do not worry, this is a shared_ptr
+    _loopPtr->unregisterEventor(_eventorPtr);   // do not worry, this is a shared_ptr, and will do before socket close.
 }
 
 void Acceptor::setNewConnectionCallback(NewConnectionCallback cb)

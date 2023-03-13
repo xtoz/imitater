@@ -36,9 +36,9 @@ Socket::Socket()
 
 Socket::~Socket()
 {
+    close();
     string log = "a socket deconstructed, fd:" + to_string(_sockfd);
     LOG_NORMAL << log.c_str();
-    close();
 }
 
 Socket::Socket(int sockfd, sockaddr_in addr) :
@@ -143,7 +143,9 @@ void Socket::close()
 {
     string log = "a socket close, fd:" + to_string(_sockfd);
     LOG_NORMAL << log.c_str();
+    
     ::closesocket(_sockfd);
+    _sockfd = INVALID_SOCKET;
 }
 
 int Socket::sockFD() const

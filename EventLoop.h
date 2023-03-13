@@ -23,6 +23,9 @@ public:
     void unregisterEventor(Eventor::EventorPtr eventor);
     void execInLoop(FuncInLoop func);
 
+    void unregisterEventorImidiate(Eventor::EventorPtr eventor);    // would not push task in loop; this is a Compromise Method for
+                                                                    // close socket behavior. suggest call this in loop task.
+
 private:
     Selector _selector;
     bool _exit;

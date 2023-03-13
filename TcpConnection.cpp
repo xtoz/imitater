@@ -26,13 +26,12 @@ TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr l
     else
     {
         // _state = Connected;
-        LOG_NORMAL << "new tcpconnection constructed.";
+        LOG_NORMAL << "a new tcpconnection constructed.";
     }
 }
 
 TcpConnection::~TcpConnection()
 {
-    closeInLoop();  // do not worry, sock does not share with other, there is no one have sock when exec descontruct func.
     _loopPtr->unregisterEventor(_eventorPtr); // do not worry, this is a shared_ptr, and conn in event callback is weak ptr.
 
     delete[] _sockReadBuffer;
@@ -130,7 +129,7 @@ void TcpConnection::handleClose()
     //     return;
     // _state = Closed;
     _socketPtr->close();
-    _loopPtr->unregisterEventor(_eventorPtr);
+    _loopPtr->unregisterEventorImidiate(_eventorPtr);   // compromise method for close socket.
     if (_closeCallback)
         _closeCallback();
 }
