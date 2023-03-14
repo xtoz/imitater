@@ -17,7 +17,7 @@ public:
     typedef std::shared_ptr<EventLoop> EventLoopPtr;
     typedef std::function<void(void)> FuncInLoop;
 
-    void loop();
+    void loop();    // must exec in the same thread where the loop created.
     void registerEventor(Eventor::EventorPtr eventor);  // function provided by eventloop must be multi-thread.
     void updateEventor(Eventor::EventorPtr eventor);
     void unregisterEventor(Eventor::EventorPtr eventor);
@@ -34,6 +34,7 @@ private:
     std::vector<FuncInLoop> funcInLoopList;
     std::mutex _mutexFuncInLoop;
 
+    bool checkThread();
     void handleFuncInLoop();
 };
 }
