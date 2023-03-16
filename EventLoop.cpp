@@ -10,7 +10,7 @@ thread_local EventLoop* t_loopInCurThread = nullptr;
 EventLoop::EventLoop():
 _timeoutUS(100000)
 {
-    _exit = false;
+    _exit = true;
     if(nullptr == t_loopInCurThread)
         t_loopInCurThread = this;
     else
@@ -27,6 +27,10 @@ void EventLoop::loop()
     if(!checkThread())
         return;
 
+    LOG_NORMAL << to_string((int)this).c_str() << " loop start.";
+
+    _exit = false;
+
     while(!_exit)
     {
         Selector::EventorPtrList activeList = _selector.select(_timeoutUS);
@@ -36,6 +40,20 @@ void EventLoop::loop()
 
         handleFuncInLoop();
     }
+
+    LOG_NORMAL << to_string((int)this).c_str() << " loop end.";
+}
+
+bool EventLoop::isLooping() const
+{
+    return !_exit;
+}
+
+void EventLoop::stopLoop()
+{
+    if(!checkThread())
+        return;
+    _exit = true;
 }
 
 void EventLoop::registerEventor(Eventor::EventorPtr eventor)
