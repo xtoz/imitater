@@ -8,7 +8,7 @@ using namespace std;
 thread_local EventLoop* t_loopInCurThread = nullptr;
 
 EventLoop::EventLoop():
-_timeoutUS(100000)
+_timeoutUS(1000*1000)
 {
     _exit = true;
     if(nullptr == t_loopInCurThread)

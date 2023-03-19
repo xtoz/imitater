@@ -42,12 +42,20 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     FD_ZERO(&readSet);
     FD_ZERO(&writeSet);
 
+    bool needSel = false;   //TODO:this var is build for avoiding some log I do not want to see in debug, this var should be remove in future.
     for(auto && fdevt : _mapEventor)
     {
+        
         if(fdevt.second->events() & Eventor::EventRead)
+        {
+            needSel = true;
             FD_SET(fdevt.second->sockFD(), &readSet);
+        }
         if(fdevt.second->events() & Eventor::EventWrite)
+        {
+            needSel = true;
             FD_SET(fdevt.second->sockFD(), &writeSet);
+        }
     }
 
     // select
@@ -59,7 +67,7 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     }
     else if(-1 == ret)
     {
-        if(_mapEventor.size())
+        if(needSel)
             LOG_ERROR << "select return -1.";
         return activeList;
     }
