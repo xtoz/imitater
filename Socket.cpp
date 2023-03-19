@@ -145,7 +145,6 @@ void Socket::close()
     LOG_NORMAL << log.c_str();
     
     ::closesocket(_sockfd);
-    _sockfd = INVALID_SOCKET;
 }
 
 int Socket::sockFD() const

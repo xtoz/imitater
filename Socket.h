@@ -29,7 +29,7 @@ private:
     static const int DEFAULT_MAX_CONN;    // 20
     static const unsigned short DEFAULT_PORT;  // 8888
     
-    int _sockfd;
+    SOCKET _sockfd;
     sockaddr_in _addr;
 
     void bind(const char* host, unsigned short port);

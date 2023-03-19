@@ -15,10 +15,12 @@ _timeoutUS(100000)
         t_loopInCurThread = this;
     else
         LOG_ERROR << "Redundant EventLoop created.";
+    LOG_NORMAL << "EventLoop construct.";
 }
 
 EventLoop::~EventLoop()
 {
+    LOG_NORMAL << "EventLoop deconstruct.";
     t_loopInCurThread = nullptr;
 }
 
@@ -26,8 +28,6 @@ void EventLoop::loop()
 {
     if(!checkThread())
         return;
-
-    LOG_NORMAL << to_string((int)this).c_str() << " loop start.";
 
     _exit = false;
 
@@ -41,7 +41,9 @@ void EventLoop::loop()
         handleFuncInLoop();
     }
 
-    LOG_NORMAL << to_string((int)this).c_str() << " loop end.";
+    string addr = reinterpret_cast<const char*>(this);
+    addr += " loop end";
+    LOG_NORMAL << addr.c_str();
 }
 
 bool EventLoop::isLooping() const
@@ -88,9 +90,9 @@ bool EventLoop::checkThread()
 {
     if(this != t_loopInCurThread)
     {
-        string log = "Check Thread Failed, this object may be redundant: ";
-        log.append(to_string((int)this));
-        LOG_ERROR << log.c_str();
+        string log = "Check Thread Failed, this event loop may be redundant: ";
+        string addr = reinterpret_cast<const char*>(this);
+        LOG_ERROR << log.c_str() << addr.c_str();
         return false;
     }
 

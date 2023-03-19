@@ -1,4 +1,5 @@
 #include "Acceptor.h"
+#include "EventLoopPool.h"
 
 using namespace imitater;
 using namespace std;
@@ -23,6 +24,7 @@ void Acceptor::setNewConnectionCallback(NewConnectionCallback cb)
 
 void Acceptor::listen()
 {
+    // TODO: in theory, bind func should with weakptr, not sharedptr.
     _loopPtr->execInLoop(std::bind(&Acceptor::listenInLoop, shared_from_this()));
 }
     
@@ -49,6 +51,7 @@ void Acceptor::listenInLoop()
 TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
 {
     Socket::SocketPtr newSocket = _socketPtr->accept();
-    TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
+    // TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
+    TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, EventLoopPool::getInstance()->getNextLoop());
     return conn;
 }

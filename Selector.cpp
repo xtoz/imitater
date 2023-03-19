@@ -59,7 +59,8 @@ Selector::EventorPtrList Selector::select(long timeoutUS)
     }
     else if(-1 == ret)
     {
-        LOG_ERROR << "select return -1.";
+        if(_mapEventor.size())
+            LOG_ERROR << "select return -1.";
         return activeList;
     }
 

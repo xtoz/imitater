@@ -48,6 +48,7 @@ void TcpConnection::setRead(int on)
     else
         events &= ~Eventor::EventRead;
 
+    // TODO: in theory, bind func should with weakptr, not sharedptr.
     _loopPtr->execInLoop(std::bind(&TcpConnection::updateEventsInLoop, shared_from_this(), events));
 }
 
@@ -59,6 +60,7 @@ void TcpConnection::setWrite(int on)
     else
         events &= ~Eventor::EventWrite;
 
+    // TODO: in theory, bind func should with weakptr, not sharedptr.
     _loopPtr->execInLoop(std::bind(&TcpConnection::updateEventsInLoop, shared_from_this(), events));
 }
 
@@ -87,11 +89,13 @@ void TcpConnection::write(void *data, int len)
     // if (_state != Connected)
     //     return;
     _writeBuffer.write(data, len);
+    // TODO: in theory, bind func should with weakptr, not sharedptr.
     _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
 
 void TcpConnection::close()
 {
+    // TODO: in theory, bind func should with weakptr, not sharedptr.
     _loopPtr->execInLoop(std::bind(&TcpConnection::closeInLoop, shared_from_this()));
 }
 
@@ -175,6 +179,7 @@ void TcpConnection::writeInLoop()
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
     _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider how much data real be written in socket write
     if (_writeBuffer.size() > 0)
+        // TODO: in theory, bind func should with weakptr, not sharedptr.
         _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
 

@@ -2,6 +2,7 @@
 #define IMITATER_THREADPOOL_H
 
 #include "TaskQueue.h"
+#include "ThreadLoop.h"
 
 #include <functional>
 #include <thread>
@@ -12,22 +13,22 @@ namespace imitater
 class ThreadPool
 {
 public:
-    typedef std::function<void(void)> Task;
+    explicit ThreadPool(int coreSize, int maxSize);
+    ~ThreadPool();
 
-    void setMaxThreadNum(int max);
-    void setOverloadNum(int overload);
-
-    void pushTask(Task task);
+    void pushTask(ThreadLoop::Task task);
 
 private:
-    int _maxNum;
-    int _overloadNum;
+    int _coreSize;
+    int _maxSize;
 
-    TaskQueue<Task> _taskQueue;
-    std::vector<std::thread> _threads;
+    TaskQueue<ThreadLoop::Task>::TaskQueuePtr _taskQueue;
+    std::vector<ThreadLoop::TaskThreadPtr> _threads;
+    std::mutex _trdVecMtx;
 
     void createThread();
     void deleteThread();
+    void threadEndCallback(ThreadLoop::Tid tid);
 };
 }
 
