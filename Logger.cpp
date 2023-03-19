@@ -74,5 +74,6 @@ Logger::~Logger()
 
 void Logger::log(const char* log)
 {
-	cout << log << endl;
+    unique_lock<mutex> lock(_logMtx);
+    cout << log << endl;
 }

@@ -3,9 +3,10 @@
 
 #include "Buffer.h"
 #include <initializer_list>
+#include <iostream>
 
 
-#define PREFIX_LEN 500
+#define PREFIX_LEN 1024
 
 namespace imitater
 {
@@ -22,6 +23,7 @@ private:
     ~Logger();
     static Logger* loggerInstance;
     Buffer _buffer;
+    std::mutex _logMtx;
 };
 
 class LoggerAgent
@@ -40,9 +42,14 @@ private:
 };
 }
 
-#define LOG_NORMAL imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::NORMAL)
-#define LOG_WARN imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::WARN)
-#define LOG_ERROR imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::ERRORme)
-#define LOG_FATAL imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::FATAL)
+// #define LOG_NORMAL imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::NORMAL)
+// #define LOG_WARN imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::WARN)
+// #define LOG_ERROR imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::ERRORme)
+// #define LOG_FATAL imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::FATAL)
+
+#define LOG_NORMAL std::cout << std::endl
+#define LOG_WARN std::cout << std::endl
+#define LOG_ERROR std::cout << std::endl
+#define LOG_FATAL std::cout << std::endl
 
 #endif
