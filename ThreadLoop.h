@@ -2,13 +2,15 @@
 #define IMITATER_THREADLOOP_H
 
 #include "TaskQueue.h"
+#include "Uncopyable.h"
+
 #include <functional>
 #include <thread>
 #include <memory>
 
 namespace imitater
 {
-class ThreadLoop
+class ThreadLoop : uncopyable
 {
 public:
     typedef std::function<void(void)> Task;

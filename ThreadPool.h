@@ -3,6 +3,7 @@
 
 #include "TaskQueue.h"
 #include "ThreadLoop.h"
+#include "Uncopyable.h"
 
 #include <functional>
 #include <thread>
@@ -10,7 +11,7 @@
 
 namespace imitater
 {
-class ThreadPool
+class ThreadPool : uncopyable
 {
 public:
     explicit ThreadPool(int coreSize, int maxSize);

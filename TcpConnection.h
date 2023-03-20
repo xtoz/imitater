@@ -3,10 +3,11 @@
 
 #include "EventLoop.h"
 #include "Buffer.h"
+#include "Uncopyable.h"
 
 namespace imitater
 {
-class TcpConnection : public std::enable_shared_from_this<TcpConnection>    // enable_shared seems must be public
+class TcpConnection : public uncopyable, public std::enable_shared_from_this<TcpConnection>    // enable_shared seems must be public
 {
 public:
     explicit TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);

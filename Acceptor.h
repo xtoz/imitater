@@ -2,10 +2,11 @@
 #define IMITATER_ACCEPTOR_H
 
 #include "TcpConnection.h"
+#include "Uncopyable.h"
 
 namespace imitater
 {
-class Acceptor : public std::enable_shared_from_this<Acceptor>
+class Acceptor : uncopyable, public std::enable_shared_from_this<Acceptor>
 {
 public:
     explicit Acceptor(EventLoop::EventLoopPtr loop);

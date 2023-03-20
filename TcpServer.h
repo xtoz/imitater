@@ -7,7 +7,7 @@
 
 namespace imitater
 {
-class TcpServer
+class TcpServer : uncopyable
 {
 public:
     explicit TcpServer();

@@ -3,12 +3,13 @@
 
 #include "EventLoop.h"
 #include "ThreadPool.h"
+#include "Uncopyable.h"
 
 #include <array>
 
 namespace imitater
 {
-class EventLoopPool
+class EventLoopPool : uncopyable
 {
 public:
     static EventLoopPool* getInstance();

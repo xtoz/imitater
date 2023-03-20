@@ -2,11 +2,12 @@
 #define IMITATER_EVENTOR_H
 
 #include "Socket.h"
+#include "Uncopyable.h"
 #include <functional>
 
 namespace imitater
 {
-class Eventor
+class Eventor : uncopyable
 {
 public:
     explicit Eventor(Socket::SocketPtr socket);

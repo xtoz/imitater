@@ -1,12 +1,14 @@
 #ifndef IMITATER_SOCKET_H
 #define IMITATER_SOCKET_H
 
+#include "Uncopyable.h"
+
 #include <winsock2.h> 
 #include <memory>
 
 namespace imitater
 {
-class Socket
+class Socket : uncopyable
 {
 public:
     Socket();

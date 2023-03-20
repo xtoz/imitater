@@ -2,11 +2,12 @@
 #define IMITATER_SELECTOR_H
 
 #include "Eventor.h"
+#include "Uncopyable.h"
 #include <map>
 
 namespace imitater
 {
-class Selector
+class Selector : uncopyable
 {
 public:
     Selector();

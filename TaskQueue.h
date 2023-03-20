@@ -2,6 +2,7 @@
 #define IMITATER_TASKQUEUE_H
 
 #include "Logger.h"
+#include "Uncopyable.h"
 
 #include <deque>
 #include <mutex>
@@ -12,7 +13,7 @@ namespace imitater
 {
 
     template <class T>
-    class TaskQueue
+    class TaskQueue : uncopyable
     {
     private:
         int _maxSize;

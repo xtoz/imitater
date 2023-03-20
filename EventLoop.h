@@ -2,13 +2,15 @@
 #define IMITATER_EVENTLOOP_H
 
 #include "Selector.h"
+#include "Uncopyable.h"
+
 #include <functional>
 #include <mutex>
 
 
 namespace imitater
 {
-class EventLoop
+class EventLoop : uncopyable
 {
 public:
     EventLoop();
