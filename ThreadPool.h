@@ -11,7 +11,7 @@
 
 namespace imitater
 {
-class ThreadPool : uncopyable
+class ThreadPool : uncopyable, public std::enable_shared_from_this<ThreadPool>
 {
 public:
     explicit ThreadPool(int coreSize, int maxSize);

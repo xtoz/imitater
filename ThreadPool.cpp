@@ -9,7 +9,7 @@ _maxSize(maxSize),
 _taskQueue(make_shared<TaskQueue<ThreadLoop::Task>>(_maxSize))
 {
     _threads.reserve(_maxSize);
-    // TODO:consider create thread when needed, for example, no waiting state thread.
+    // TODO:consider create core thread when needed, for example, no waiting state thread and new task come.
     for (int i = 0; i < coreSize; ++i)
         createThread();
 }
@@ -22,17 +22,20 @@ ThreadPool::~ThreadPool()
 void ThreadPool::pushTask(ThreadLoop::Task task)
 {
     {
-        // TODO: overload mode when exist task too much
+        // TODO: consider into overload mode when exist too much task:
         // consider: if (task_num > threshold && thread_num < overload) then create some thread;
         // if (task_num < threshold && thread_num > core) then delete some thread;
+        // this seems like lazy eliminate of memcached (see my note in obsidian).
     }
     _taskQueue->pushTask(task);
 }
 
 void ThreadPool::createThread()
 {
-    ThreadLoop::createTaskThread(_taskQueue);
-
+    ThreadLoop::ThreadLoopPtr loop =  ThreadLoop::createTaskThread(_taskQueue);
+    // TODO: thread may end before this exec
+    loop->setEndCallback(bind(&ThreadPool::threadEndCallback,shared_from_this(),placeholders::_1));
+    _threads.emplace_back(loop);
 }
 
 void ThreadPool::deleteThread()
