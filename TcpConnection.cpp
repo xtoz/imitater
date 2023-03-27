@@ -48,7 +48,7 @@ void TcpConnection::setRead(int on)
     else
         events &= ~Eventor::EventRead;
 
-    // TODO: in theory, bind func should with weakptr, not sharedptr.
+    // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::updateEventsInLoop, shared_from_this(), events));
 }
 
@@ -60,7 +60,7 @@ void TcpConnection::setWrite(int on)
     else
         events &= ~Eventor::EventWrite;
 
-    // TODO: in theory, bind func should with weakptr, not sharedptr.
+    // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::updateEventsInLoop, shared_from_this(), events));
 }
 
@@ -89,19 +89,24 @@ void TcpConnection::write(void *data, int len)
     // if (_state != Connected)
     //     return;
     _writeBuffer.write(data, len);
-    // TODO: in theory, bind func should with weakptr, not sharedptr.
+    // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
 
 void TcpConnection::close()
 {
-    // TODO: in theory, bind func should with weakptr, not sharedptr.
+    // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::closeInLoop, shared_from_this()));
 }
 
 int TcpConnection::state() const
 {
     return _state;
+}
+
+void TcpConnection::reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop)
+{
+    _loopPtr->execInLoop(std::bind(&TcpConnection::reusedInLoop, shared_from_this(), socket, loop));
 }
 
 void TcpConnection::handleRead()
@@ -143,6 +148,7 @@ void TcpConnection::updateEventsInLoop(int events)
     // if (_state != Connected)
     //     return;
     _eventorPtr->setEvents(events);
+    // compare with shared_ptr in loop, callback ptr will be hold forever, so callback ptr must be weak_ptr;
     if (events & Eventor::EventRead)
     {
         function<void(void)> callback = [weakObj = weak_from_this()]()
@@ -179,11 +185,45 @@ void TcpConnection::writeInLoop()
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
     _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider how much data real be written in socket write
     if (_writeBuffer.size() > 0)
-        // TODO: in theory, bind func should with weakptr, not sharedptr.
+        // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
         _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
 }
 
 void TcpConnection::closeInLoop()
 {
     handleClose();
+}
+
+void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop)
+{
+    // release resource
+    _loopPtr->unregisterEventorImidiate(_eventorPtr); // before unregister finish, user should not operate tcpConn, but now cannot promise.
+
+    // new resource
+    _socketPtr = socket;
+    _eventorPtr = make_shared<Eventor>(_socketPtr);
+    _loopPtr = loop;
+
+    _loopPtr->registerEventor(_eventorPtr);
+
+    memset(_sockReadBuffer, '\0', _SockBufferSize);
+    memset(_sockWriteBuffer, '\0', _SockBufferSize);
+
+    _readCallback = nullptr;
+    _writeCallback = nullptr;
+    _closeCallback = nullptr;
+
+    _readBuffer.abort(_readBuffer.size());
+    _writeBuffer.abort(_writeBuffer.size());
+
+    if (!_socketPtr->isValid())
+    {
+        // _state = Undefined;
+        LOG_WARN << "A tcpconnection reused with a invalid socket.";
+    }
+    else
+    {
+        // _state = Connected;
+        LOG_NORMAL << "A new tcpconnection reused.";
+    }
 }

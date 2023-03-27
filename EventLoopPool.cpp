@@ -17,9 +17,10 @@ void EventLoopPool::release()
 
 EventLoopPool::EventLoopPool() :
 _maxLoopNum(4),
-_trdPool(_maxLoopNum, _maxLoopNum)
+_trdPool(make_shared<ThreadPool>(_maxLoopNum, _maxLoopNum))
 {
     _curIndex = 0;
+    _trdPool->createCoreThreads();
 }
 
 EventLoopPool::~EventLoopPool()
@@ -32,15 +33,14 @@ EventLoop::EventLoopPtr EventLoopPool::getNextLoop()
     unique_lock<mutex> lock(_loopArrMtx);
     if(_loopVec.size() < _maxLoopNum)
     {
-        // TODO: maybe should put weakptr into threadpool if oneday threadpool is not a normal member, since this can be dangerous.
-        _trdPool.pushTask(bind(&EventLoopPool::createAndExecLoop, this));
+        // TODO: now eventlooppool exist forever, so 'this' donnot have problem.
+        _trdPool->pushTask(bind(&EventLoopPool::createAndExecLoop, this));
         _loopArrCond.wait(lock);
     }
 
-    LOG_NORMAL << "Current return loop : "<< to_string(_curIndex % _loopVec.size()).c_str();
-    
-    EventLoop::EventLoopPtr retPtr = _loopVec[_curIndex];
-    _curIndex = ++_curIndex % _loopVec.size();
+    _curIndex = _curIndex % _loopVec.size();
+    LOG_NORMAL << "Current return loop : "<< to_string(_curIndex).c_str();
+    EventLoop::EventLoopPtr retPtr = _loopVec[_curIndex++];
     return retPtr;
 }
 

@@ -1,5 +1,6 @@
 #include "Acceptor.h"
 #include "EventLoopPool.h"
+#include "TcpConnectionPool.h"
 
 using namespace imitater;
 using namespace std;
@@ -52,6 +53,6 @@ TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
 {
     Socket::SocketPtr newSocket = _socketPtr->accept();
     // TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
-    TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, EventLoopPool::getInstance()->getNextLoop());
+    TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, EventLoopPool::getInstance()->getNextLoop());
     return conn;
 }

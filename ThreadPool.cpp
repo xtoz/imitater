@@ -10,13 +10,17 @@ _taskQueue(make_shared<TaskQueue<ThreadLoop::Task>>(_maxSize))
 {
     _threads.reserve(_maxSize);
     // TODO:consider create core thread when needed, for example, no waiting state thread and new task come.
-    for (int i = 0; i < coreSize; ++i)
-        createThread();
 }
 
 ThreadPool::~ThreadPool()
 {
     // TODO:any resource should be release?
+}
+
+void ThreadPool::createCoreThreads()
+{
+    while(_threads.size() <= _coreSize)
+        createThread();
 }
 
 void ThreadPool::pushTask(ThreadLoop::Task task)
@@ -32,9 +36,7 @@ void ThreadPool::pushTask(ThreadLoop::Task task)
 
 void ThreadPool::createThread()
 {
-    ThreadLoop::ThreadLoopPtr loop =  ThreadLoop::createTaskThread(_taskQueue);
-    // TODO: thread may end before this exec
-    loop->setEndCallback(bind(&ThreadPool::threadEndCallback,shared_from_this(),placeholders::_1));
+    ThreadLoop::ThreadLoopPtr loop =  ThreadLoop::createTaskThread(_taskQueue, bind(&ThreadPool::threadEndCallback,shared_from_this(),placeholders::_1));
     _threads.emplace_back(loop);
 }
 

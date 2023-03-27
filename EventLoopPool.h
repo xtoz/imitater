@@ -24,7 +24,7 @@ private:
     std::vector<EventLoop::EventLoopPtr> _loopVec;
     std::mutex _loopArrMtx;
     std::condition_variable _loopArrCond;
-    ThreadPool _trdPool;
+    ThreadPool::ThreadPoolPtr _trdPool;
 
     EventLoopPool();
     ~EventLoopPool();

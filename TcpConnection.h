@@ -34,10 +34,12 @@ public:
     void close();
     int state() const;
 
+    void reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
+
 private:
-    const Socket::SocketPtr _socketPtr; // Acceptor pass this to conn, and will not share with other
-    const Eventor::EventorPtr _eventorPtr;  // will share this with eventloop.selector
-    const EventLoop::EventLoopPtr _loopPtr; // other share this with conn
+    Socket::SocketPtr _socketPtr; // Acceptor pass this to conn, and will not share with other
+    Eventor::EventorPtr _eventorPtr;  // will share this with eventloop.selector
+    EventLoop::EventLoopPtr _loopPtr; // other share this with conn
     ReadCallback _readCallback;
     WriteCallback _writeCallback;
     CloseCallback _closeCallback;
@@ -56,6 +58,7 @@ private:
 
     void writeInLoop();
     void closeInLoop();
+    void reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
 };
 }
 

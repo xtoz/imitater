@@ -4,6 +4,8 @@
 using namespace imitater;
 using namespace std;
 
+const int Selector::_maxFdLimit = 1024;
+
 Selector::Selector()
 {
 
@@ -16,6 +18,10 @@ Selector::~Selector()
 
 void Selector::registerEventor(Eventor::EventorPtr eventor)
 {
+    if(!_mapEventor.size() >= _maxFdLimit) {
+        LOG_ERROR << "Too much Eventor.";
+        return;
+    }
     if(!_mapEventor.count(eventor->eid()))
         _mapEventor.emplace(pair(eventor->eid(), eventor));
 }
@@ -27,7 +33,6 @@ void Selector::updateEventor(Eventor::EventorPtr eventor)
 
 void Selector::unregisterEventor(Eventor::EventorPtr eventor)
 {
-
     if(_mapEventor.count(eventor->eid()))
         _mapEventor.erase(eventor->eid());
 }

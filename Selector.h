@@ -22,6 +22,7 @@ public:
     EventorPtrList select(long timeoutUS);
 
 private:
+    static const int _maxFdLimit;
     std::map<int,Eventor::EventorPtr> _mapEventor;
 };
 }

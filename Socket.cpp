@@ -123,17 +123,17 @@ int Socket::write(void* data, int len)
     int size = ::send(_sockfd, (char*)data, len, 0);
     if(-1 == size)
     {
-        string log = "send data size > 0, fd:" + to_string(_sockfd);
+        string log = "send data size -1 failed, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
     }
     else if(len == size)
     {
-        string log = "send data size success, fd:" + to_string(_sockfd);
+        string log = "send data size > 0 success, fd:" + to_string(_sockfd);
         LOG_NORMAL << log.c_str();
     }
     else
     {
-        string log = "send part data, fd:" + to_string(_sockfd);
+        string log = "send part of data, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
     }
     return size;

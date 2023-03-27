@@ -92,7 +92,7 @@ void Buffer::abort(int len)
         
     lock_guard<mutex> lock(_mutex);
 
-    if(len > _tail - _head)
+    if(len >= _tail - _head)
         _head = _tail = 0;
     else
         _head += len;

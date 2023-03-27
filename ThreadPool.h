@@ -17,6 +17,9 @@ public:
     explicit ThreadPool(int coreSize, int maxSize);
     ~ThreadPool();
 
+    typedef std::shared_ptr<ThreadPool> ThreadPoolPtr;
+
+    void createCoreThreads();
     void pushTask(ThreadLoop::Task task);
 
 private:
