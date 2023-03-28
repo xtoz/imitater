@@ -10,10 +10,12 @@ namespace imitater
 class TcpConnection : public uncopyable, public std::enable_shared_from_this<TcpConnection>    // enable_shared seems must be public
 {
 public:
+    typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
+    typedef std::function<void(TcpConnectionPtr)> InitedCallback;
+
     explicit TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
     ~TcpConnection();
 
-    typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::function<void(void)> ReadCallback;
     typedef std::function<void(void)> WriteCallback;
     typedef std::function<void(void)> CloseCallback;
@@ -34,7 +36,8 @@ public:
     void close();
     int state() const;
 
-    void reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
+    static TcpConnectionPtr createTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
+    static TcpConnectionPtr reusedTcpConnection(TcpConnectionPtr conn, Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
 
 private:
     Socket::SocketPtr _socketPtr; // Acceptor pass this to conn, and will not share with other
@@ -58,7 +61,10 @@ private:
 
     void writeInLoop();
     void closeInLoop();
-    void reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
+    void initInLoop(InitedCallback cb);
+    void reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
+    void reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
+    void reusedInLoop2(InitedCallback cb);
 };
 }
 

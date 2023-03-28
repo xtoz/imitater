@@ -30,7 +30,7 @@ void ThreadLoop::setThread(std::thread& trd)
         unique_lock<mutex> lock(_initMtx);
         _thread = move(trd);
     }
-    //_initCv.notify_all();
+    _initCv.notify_all();
 }
 
 void ThreadLoop::run()

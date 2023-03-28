@@ -79,6 +79,13 @@ void EventLoop::execInLoop(FuncInLoop func)
     funcInLoopList.emplace_back(func);
 }
 
+void EventLoop::registerEventorImidiate(Eventor::EventorPtr eventor)
+{
+    if(!checkThread())
+        return;
+    _selector.registerEventor(eventor);
+}
+
 void EventLoop::unregisterEventorImidiate(Eventor::EventorPtr eventor)
 {
     if(!checkThread())

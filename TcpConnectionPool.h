@@ -24,7 +24,7 @@ class TcpConnectionPool : public uncopyable
 public:
     static TcpConnectionPool* getInstance();
     static void release();
-    TcpConnection::TcpConnectionPtr getTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
+    TcpConnection::TcpConnectionPtr getTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, TcpConnection::InitedCallback cb);
 
 private:
     TcpConnectionPool();

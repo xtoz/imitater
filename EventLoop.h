@@ -27,6 +27,8 @@ public:
     void unregisterEventor(Eventor::EventorPtr eventor);
     void execInLoop(FuncInLoop func);
 
+    void registerEventorImidiate(Eventor::EventorPtr eventor);      // this is a Compromise Method for init eventor inited,
+                                                                    // especially for tcp connection reused.
     void unregisterEventorImidiate(Eventor::EventorPtr eventor);    // would not push task in loop; this is a Compromise Method for
                                                                     // close socket behavior. suggest call this in loop task.
 

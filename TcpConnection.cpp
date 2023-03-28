@@ -9,8 +9,6 @@ TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr l
                                                                                        _loopPtr(loop),
                                                                                        _SockBufferSize(1024)
 {
-    _loopPtr->registerEventor(_eventorPtr);
-
     _sockReadBuffer = new char[_SockBufferSize];
     _sockWriteBuffer = new char[_SockBufferSize];
 
@@ -18,16 +16,7 @@ TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr l
     _writeCallback = nullptr;
     _closeCallback = nullptr;
 
-    if (!_socketPtr->isValid())
-    {
-        // _state = Undefined;
-        LOG_WARN << "a new tcpconnection constructed with a invalid socket.";
-    }
-    else
-    {
-        // _state = Connected;
-        LOG_NORMAL << "a new tcpconnection constructed.";
-    }
+    LOG_NORMAL << "A tcpconnection constructed.";
 }
 
 TcpConnection::~TcpConnection()
@@ -37,7 +26,7 @@ TcpConnection::~TcpConnection()
     delete[] _sockReadBuffer;
     delete[] _sockWriteBuffer;
 
-    LOG_NORMAL << "a tcpconnection deconstructed.";
+    LOG_NORMAL << "A tcpconnection deconstructed.";
 }
 
 void TcpConnection::setRead(int on)
@@ -104,9 +93,22 @@ int TcpConnection::state() const
     return _state;
 }
 
-void TcpConnection::reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop)
+void TcpConnection::reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb)
 {
-    _loopPtr->execInLoop(std::bind(&TcpConnection::reusedInLoop, shared_from_this(), socket, loop));
+    _loopPtr->execInLoop(std::bind(&TcpConnection::reusedInLoop, shared_from_this(), socket, loop, cb));
+}
+
+TcpConnection::TcpConnectionPtr TcpConnection::createTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, TcpConnection::InitedCallback cb)
+{
+    TcpConnection::TcpConnectionPtr newConn = make_shared<TcpConnection>(socket, loop);
+    newConn->_loopPtr->execInLoop(std::bind(&TcpConnection::initInLoop, newConn, cb));
+    return newConn;
+}
+
+TcpConnection::TcpConnectionPtr TcpConnection::reusedTcpConnection(TcpConnectionPtr conn, Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, TcpConnection::InitedCallback cb)
+{
+    conn->reused(socket, loop, cb);
+    return conn;
 }
 
 void TcpConnection::handleRead()
@@ -194,17 +196,24 @@ void TcpConnection::closeInLoop()
     handleClose();
 }
 
-void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop)
+void TcpConnection::initInLoop(InitedCallback cb)
+{
+    _loopPtr->registerEventorImidiate(_eventorPtr);
+    if(cb)
+        cb(shared_from_this());
+}
+
+void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb)
 {
     // release resource
-    _loopPtr->unregisterEventorImidiate(_eventorPtr); // before unregister finish, user should not operate tcpConn, but now cannot promise.
+    _loopPtr->unregisterEventorImidiate(_eventorPtr); // TODO: before unregister finish, user should not operate tcpConn, but now cannot
+                                                      // promise. becase return tcpConnPtr and reusedInLoop are in different threads.
+                                                      // Before register finish, operate tcpConn is relatively safe.
 
     // new resource
     _socketPtr = socket;
     _eventorPtr = make_shared<Eventor>(_socketPtr);
     _loopPtr = loop;
-
-    _loopPtr->registerEventor(_eventorPtr);
 
     memset(_sockReadBuffer, '\0', _SockBufferSize);
     memset(_sockWriteBuffer, '\0', _SockBufferSize);
@@ -216,14 +225,15 @@ void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopP
     _readBuffer.abort(_readBuffer.size());
     _writeBuffer.abort(_writeBuffer.size());
 
-    if (!_socketPtr->isValid())
-    {
-        // _state = Undefined;
-        LOG_WARN << "A tcpconnection reused with a invalid socket.";
-    }
-    else
-    {
-        // _state = Connected;
-        LOG_NORMAL << "A new tcpconnection reused.";
-    }
+    _loopPtr->execInLoop(std::bind(&TcpConnection::reusedInLoop2, shared_from_this(), cb));
+
+    LOG_NORMAL << "A tcpconnection reused.";
+}
+
+
+void TcpConnection::reusedInLoop2(InitedCallback cb)
+{
+    _loopPtr->registerEventorImidiate(_eventorPtr);
+    if(cb)
+        cb(shared_from_this());
 }

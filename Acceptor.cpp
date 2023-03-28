@@ -33,8 +33,8 @@ void Acceptor::hadnleRead()
 {
     TcpConnection::TcpConnectionPtr newConn = acceptNewConnection();
     
-    if(_newConnectoinCallback)
-        _newConnectoinCallback(newConn);
+    // if(_newConnectoinCallback) // let tcp conn call this, since tcp conn have his own init action and need
+    //     _newConnectoinCallback(newConn); // to be finished in other thread, acceptor do not know when it finish init.
 }
 
 void Acceptor::listenInLoop()
@@ -53,6 +53,6 @@ TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
 {
     Socket::SocketPtr newSocket = _socketPtr->accept();
     // TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
-    TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, EventLoopPool::getInstance()->getNextLoop());
+    TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, EventLoopPool::getInstance()->getNextLoop(), _newConnectoinCallback);
     return conn;
 }

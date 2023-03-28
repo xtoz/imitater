@@ -45,14 +45,23 @@ void TcpConnectionPool::release()
 }
     
 
-TcpConnection::TcpConnectionPtr TcpConnectionPool::getTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop)
+TcpConnection::TcpConnectionPtr TcpConnectionPool::getTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, TcpConnection::InitedCallback cb)
 {
     unique_lock<mutex> lock(_mtxConn);
+
+    auto temp = _head;
+    cout << "chain: ";
+    while(temp != nullptr) {
+        cout << temp->_data.use_count() << " ";
+        temp = temp->_next;
+    }
+    cout << endl;
 
     // if head is null, create head;
     if(_head == nullptr) {
         _head = new TcpConnRc();
-        _head->_data = make_shared<TcpConnection>(socket, loop);
+        // _head->_data = make_shared<TcpConnection>(socket, loop);
+        _head->_data = TcpConnection::createTcpConnection(socket, loop, cb);
         _current = _head;
         LOG_NORMAL << "Create new TcpConnection pool head.";
         return _current->_data;
@@ -66,7 +75,8 @@ TcpConnection::TcpConnectionPtr TcpConnectionPool::getTcpConnection(Socket::Sock
     {
         if(rc->unused()) {
             LOG_NORMAL << "Find a unused TcpConnection in pool.";
-            rc->_data->reused(socket, loop);
+            TcpConnection::reusedTcpConnection(rc->_data, socket, loop, cb);
+            // rc->_data(socket, loop);
             // rc->_data = make_shared<TcpConnection>(socket, loop);
             return rc->_data;
         }
@@ -84,7 +94,8 @@ TcpConnection::TcpConnectionPtr TcpConnectionPool::getTcpConnection(Socket::Sock
     // not find in chain list, create new one;
     LOG_NORMAL << "Create new TcpConnection in pool.";
     rc = new TcpConnRc();
-    rc->_data = make_shared<TcpConnection>(socket, loop);
+    // rc->_data = make_shared<TcpConnection>(socket, loop);
+    rc->_data = TcpConnection::createTcpConnection(socket, loop, cb);
     prev->_next = rc;
 
     if (++_dlt >= _maxDlt) {
