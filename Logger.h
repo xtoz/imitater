@@ -49,9 +49,4 @@ private:
 #define LOG_FATAL imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::FATAL)
 #define LOG_DEBUG imitater::LoggerAgent(__FILE__, __LINE__, __FUNCTION__, imitater::LoggerAgent::LogLevel::DEBUG)
 
-// #define LOG_NORMAL std::cout << std::endl
-// #define LOG_WARN std::cout << std::endl
-// #define LOG_ERROR std::cout << std::endl
-// #define LOG_FATAL std::cout << std::endl
-
 #endif
