@@ -32,7 +32,7 @@ private:
 
     void createThread();
     void deleteThread();
-    void threadEndCallback(ThreadLoop::Tid tid);
+    void handleThreadEnd(ThreadLoop::Tid tid);
 };
 }
 

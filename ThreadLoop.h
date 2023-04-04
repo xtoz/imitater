@@ -31,6 +31,7 @@ public:
     
     State state() const;
     Tid tid() const;
+    void join();
 
 private:
     std::thread _thread;

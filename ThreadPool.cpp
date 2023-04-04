@@ -15,6 +15,8 @@ _taskQueue(make_shared<TaskQueue<ThreadLoop::Task>>(_maxSize))
 ThreadPool::~ThreadPool()
 {
     // TODO:any resource should be release?
+    for(auto t : _threads)
+        t->join();
 }
 
 void ThreadPool::createCoreThreads()
@@ -36,8 +38,7 @@ void ThreadPool::pushTask(ThreadLoop::Task task)
 
 void ThreadPool::createThread()
 {
-    ThreadLoop::ThreadLoopPtr loop =  ThreadLoop::createTaskThread(_taskQueue, bind(&ThreadPool::threadEndCallback,shared_from_this(),placeholders::_1));
-    _threads.emplace_back(loop);
+    _threads.emplace_back(ThreadLoop::createTaskThread(_taskQueue, bind(&ThreadPool::handleThreadEnd,shared_from_this(),placeholders::_1)));
 }
 
 void ThreadPool::deleteThread()
@@ -45,7 +46,7 @@ void ThreadPool::deleteThread()
     _taskQueue->pushTask(nullptr);   // if a thread receive a nullptr function, it will end.
 }
 
-void ThreadPool::threadEndCallback(ThreadLoop::Tid tid)
+void ThreadPool::handleThreadEnd(ThreadLoop::Tid tid)
 {
     unique_lock<mutex> lock(_trdVecMtx);
     for(int i=0;i<_threads.size();++i)

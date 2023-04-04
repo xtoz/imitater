@@ -2,13 +2,15 @@
 #define IMITATER_SOCKET_H
 
 #include "Uncopyable.h"
+#include "StateMachine.h"
 
 #include <winsock2.h> 
 #include <memory>
 
 namespace imitater
 {
-class Socket : uncopyable
+enum SocketState {SOCK_UNDEFINED, SOCK_INVALID, SOCK_WAITBIND, SOCK_WAITLISTEN, SOCK_LISTENING, SOCK_CONNECTED, SOCK_CLOSED};
+class Socket : uncopyable, public StateMachine<SocketState>
 {
 public:
     Socket();
@@ -35,6 +37,8 @@ private:
     sockaddr_in _addr;
 
     void bind(const char* host, unsigned short port);
+    bool turnTo(SocketState state) override;
+    bool checkState(SocketState state);
 };
 }
 

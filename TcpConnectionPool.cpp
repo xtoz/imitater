@@ -49,14 +49,6 @@ TcpConnection::TcpConnectionPtr TcpConnectionPool::getTcpConnection(Socket::Sock
 {
     unique_lock<mutex> lock(_mtxConn);
 
-    auto temp = _head;
-    cout << "chain: ";
-    while(temp != nullptr) {
-        cout << temp->_data.use_count() << " ";
-        temp = temp->_next;
-    }
-    cout << endl;
-
     // if head is null, create head;
     if(_head == nullptr) {
         _head = new TcpConnRc();

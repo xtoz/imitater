@@ -4,11 +4,23 @@
 using namespace imitater;
 using namespace std;
 
-TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop) : _socketPtr(socket),
-                                                                                       _eventorPtr(make_shared<Eventor>(_socketPtr)),
-                                                                                       _loopPtr(loop),
-                                                                                       _SockBufferSize(1024)
+static constexpr TcpConnState UNDEFINED = TcpConnState::TCPCONN_UNDEFINED;
+static constexpr TcpConnState WAITINIT = TcpConnState::TCPCONN_WAITINIT;
+static constexpr TcpConnState CONNECTED = TcpConnState::TCPCONN_CONNECTED;
+static constexpr TcpConnState CLOSED = TcpConnState::TCPCONN_CLOSED;
+
+TcpConnection::TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop) :
+StateMachine<TcpConnState>(UNDEFINED),
+_socketPtr(socket),
+_eventorPtr(make_shared<Eventor>(_socketPtr)),
+_loopPtr(loop),
+_SockBufferSize(1024)
 {
+    if(!turnTo(WAITINIT)) {
+        LOG_WARN << "Turn to WAITINIT failed.";
+        return;
+    }
+
     _sockReadBuffer = new char[_SockBufferSize];
     _sockWriteBuffer = new char[_SockBufferSize];
 
@@ -75,8 +87,6 @@ void TcpConnection::read(void *data, int len)
 
 void TcpConnection::write(void *data, int len)
 {
-    // if (_state != Connected)
-    //     return;
     _writeBuffer.write(data, len);
     // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::writeInLoop, shared_from_this()));
@@ -86,11 +96,6 @@ void TcpConnection::close()
 {
     // TODO: in theory, bind func should with weakptr, not sharedptr. but shared ptr in loop will be release at last, so maybe safe.
     _loopPtr->execInLoop(std::bind(&TcpConnection::closeInLoop, shared_from_this()));
-}
-
-int TcpConnection::state() const
-{
-    return _state;
 }
 
 void TcpConnection::reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb)
@@ -113,8 +118,8 @@ TcpConnection::TcpConnectionPtr TcpConnection::reusedTcpConnection(TcpConnection
 
 void TcpConnection::handleRead()
 {
-    // if (_state != Connected)
-    //     return;
+    if(!checkState(CONNECTED))
+        return;
     int size = _socketPtr->read(_sockReadBuffer, _SockBufferSize);
     if (size <= 0) // on windows sys, read event with size <= 0 means socket close
     {
@@ -130,15 +135,17 @@ void TcpConnection::handleRead()
 
 void TcpConnection::handlWrite()
 {
-    // if (_state != Connected)
-    //     return;
+    if(!checkState(CONNECTED))
+        return;
 }
 
 void TcpConnection::handleClose()
 {
-    // if (_state == Closed)
-    //     return;
-    // _state = Closed;
+    if(!turnTo(CLOSED)) {
+        LOG_WARN << "Turn to CLOSED failed.";
+        return;
+    }
+    
     _socketPtr->close();
     _loopPtr->unregisterEventorImidiate(_eventorPtr);   // compromise method for close socket.
     if (_closeCallback)
@@ -147,8 +154,8 @@ void TcpConnection::handleClose()
 
 void TcpConnection::updateEventsInLoop(int events)
 {
-    // if (_state != Connected)
-    //     return;
+    if(!checkState(CONNECTED))
+        return;
     _eventorPtr->setEvents(events);
     // compare with shared_ptr in loop, callback ptr will be hold forever, so callback ptr must be weak_ptr;
     if (events & Eventor::EventRead)
@@ -181,8 +188,8 @@ void TcpConnection::updateEventsInLoop(int events)
 
 void TcpConnection::writeInLoop()
 {
-    // if (_state != Connected)
-    //     return;
+    if(!checkState(CONNECTED))
+        return;
     int minSize = min(_writeBuffer.size(), _SockBufferSize);
     _writeBuffer.pickRead(_sockWriteBuffer, minSize);
     _socketPtr->write(_sockWriteBuffer, minSize); // TODO:no consider how much data real be written in socket write
@@ -193,18 +200,31 @@ void TcpConnection::writeInLoop()
 
 void TcpConnection::closeInLoop()
 {
+    if(!checkState(CONNECTED))
+        return;
     handleClose();
 }
 
 void TcpConnection::initInLoop(InitedCallback cb)
 {
+    if(!turnTo(CONNECTED)) {
+        LOG_WARN << "Turn to CONNECTED failed.";
+        return;
+    }
+
     _loopPtr->registerEventorImidiate(_eventorPtr);
+
     if(cb)
         cb(shared_from_this());
 }
 
 void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb)
 {
+    if(!turnTo(WAITINIT)) {
+        LOG_WARN << "Turn to WAITINIT failed.";
+        return;
+    }
+
     // release resource
     _loopPtr->unregisterEventorImidiate(_eventorPtr); // TODO: before unregister finish, user should not operate tcpConn, but now cannot
                                                       // promise. becase return tcpConnPtr and reusedInLoop are in different threads.
@@ -233,7 +253,50 @@ void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopP
 
 void TcpConnection::reusedInLoop2(InitedCallback cb)
 {
+    if(!turnTo(CONNECTED)) {
+        LOG_WARN << "Turn to CONNECTED failed.";
+        return;
+    }
+
     _loopPtr->registerEventorImidiate(_eventorPtr);
+
     if(cb)
         cb(shared_from_this());
+}
+
+
+bool TcpConnection::turnTo(TcpConnState state)
+{
+    if(state == UNDEFINED)
+        return false;
+    else if(state == CLOSED) {
+        if(_state == CONNECTED) {
+            _state = CLOSED;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == WAITINIT) {
+        if(_state == UNDEFINED || _state == CLOSED) {
+            _state = WAITINIT;
+            return true;
+        }
+        else 
+            return false;
+    }
+    else if(state == CONNECTED) {
+        if(_state == WAITINIT) {
+            _state = CONNECTED;
+            return true;
+        }
+        else
+            return false;
+    }
+    return false;
+}
+
+bool TcpConnection::checkState(TcpConnState state)
+{
+    return _state == state;
 }

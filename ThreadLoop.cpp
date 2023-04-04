@@ -71,3 +71,8 @@ ThreadLoop::Tid ThreadLoop::tid() const
 {
     return _thread.get_id();
 }
+
+void ThreadLoop::join()
+{
+    _thread.join();
+}

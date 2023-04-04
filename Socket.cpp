@@ -10,15 +10,30 @@ using namespace std;
 const int Socket::DEFAULT_MAX_CONN = 20;
 const unsigned short Socket::DEFAULT_PORT = 8888;
 
+static constexpr SocketState UNDEFINED = SocketState::SOCK_UNDEFINED;
+static constexpr SocketState INVALID = SocketState::SOCK_INVALID;
+static constexpr SocketState WAITBIND = SocketState::SOCK_WAITBIND;
+static constexpr SocketState WAITLISTEN = SocketState::SOCK_WAITLISTEN;
+static constexpr SocketState LISTENING = SocketState::SOCK_LISTENING;
+static constexpr SocketState CONNECTED = SocketState::SOCK_CONNECTED;
+static constexpr SocketState CLOSED = SocketState::SOCK_CLOSED;
 
-Socket::Socket()
+Socket::Socket() : StateMachine<SocketState>(UNDEFINED)
 {
     _sockfd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if(!isValid())
     {
-        string log = "create invalid socket, fd:" + to_string(_sockfd);
+        turnTo(INVALID);
+        string log = "Create invalid socket, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
+        return;
     }
+
+    if(!turnTo(WAITBIND)) {
+        LOG_WARN << "Turn to wait bind failed, fd: " << to_string(_sockfd).c_str();
+        return;
+    }
+    
     unsigned long ul = 1;
     // ioctlsocket(SOCKET s, long cmd, u_long FAR* argp);
     // s：一个标识套接口的描述字。cmd：对套接口s的操作命令。argp：指向cmd命令所带参数的指针。
@@ -26,11 +41,11 @@ Socket::Socket()
     // FIONBIO：允许或禁止套接口的非阻塞模式。argp指向一个无符号长整型。如允许非阻塞模式则非零，如禁止非阻塞模式则为零。
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        string log = "set noblock socket fail, fd:";
+        string log = "Set noblock socket fail, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
     }
 
-    string log = "a socket constructed, fd:" + to_string(_sockfd);
+    string log = "Socket constructed, fd:" + to_string(_sockfd);
     LOG_NORMAL << log.c_str();
 }
 
@@ -41,38 +56,55 @@ Socket::~Socket()
     LOG_NORMAL << log.c_str();
 }
 
-Socket::Socket(int sockfd, sockaddr_in addr) :
+Socket::Socket(int sockfd, sockaddr_in addr) : StateMachine<SocketState>(UNDEFINED),
 _sockfd(sockfd),
 _addr(_addr)
 {
     if (!isValid())
     {
-        string log = "a socket init with a invalid fd:" + to_string(_sockfd);
+        turnTo(INVALID);
+        string log = "Socket init with a invalid fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
+        return;
     }
+    
+    if(!turnTo(CONNECTED)) {
+        LOG_WARN << "Turns to connected failed, fd: " << to_string(_sockfd).c_str();
+        return;
+    }
+
     unsigned long ul = 1;
     if(0 != ioctlsocket(_sockfd, FIONBIO, (unsigned long*)&ul))
     {
-        string log = "set noblock socket fail, fd:" + to_string(_sockfd);
+        string log = "Set noblock socket fail, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
-    }
+        return;
+    }   
 
-    string log = "a socket constructed with fd:" + to_string(_sockfd);
+    string log = "Socket constructed with fd:" + to_string(_sockfd);
     LOG_NORMAL << log.c_str();
 }
 
 void Socket::listen(unsigned short port, int maxConn)
 {
     bind(nullptr, DEFAULT_PORT);
+
+    if(!turnTo(LISTENING)) {
+        LOG_WARN << "Turn to LISTENING failed, fd: " << to_string(_sockfd).c_str();
+        return;
+    }
+
     if(SOCKET_ERROR == ::listen(_sockfd, DEFAULT_MAX_CONN))
     {
-        string log = "start listen fail, fd:" + to_string(_sockfd);
+        string log = "Start listen fail, fd:" + to_string(_sockfd);
         LOG_ERROR << log.c_str();
     }
 }
 
 Socket::SocketPtr Socket::accept()
 {
+    if(!checkState(LISTENING))
+        return nullptr;
     sockaddr_in addr;
     int size = sizeof(addr);
     int conn = ::accept(_sockfd, (sockaddr*)&addr, &size);
@@ -87,6 +119,10 @@ Socket::SocketPtr Socket::accept()
 
 void Socket::bind(const char* host, unsigned short port)
 {
+    if(!turnTo(WAITLISTEN)) {
+        LOG_WARN << "Turn to WAITLISTEN failed, fd: " << to_string(_sockfd).c_str();
+        return;
+    }
     _addr.sin_family = AF_INET;
     _addr.sin_port = htons(port);
     _addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -97,8 +133,74 @@ void Socket::bind(const char* host, unsigned short port)
     }
 }
 
+bool Socket::turnTo(SocketState state)
+{
+    if(state == CLOSED) {
+        if(_state == CONNECTED) {
+            _state = CLOSED;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == INVALID) {
+        if(_state == UNDEFINED) {
+            _state = INVALID;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == WAITBIND) {
+        if(_state == UNDEFINED) {
+            _state = WAITBIND;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == WAITLISTEN) {
+        if(_state == WAITBIND) {
+            _state = WAITLISTEN;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == LISTENING) {
+        if(_state == WAITLISTEN) {
+            _state = LISTENING;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == CONNECTED) {
+        if(_state == UNDEFINED ) {
+            _state = CONNECTED;
+            return true;
+        }
+        else
+            return false;
+    }
+    else if(state == UNDEFINED) {
+        return false;
+    }
+    return false;
+}
+
+bool Socket::checkState(SocketState state)
+{
+    return state == _state;
+}
+
 int Socket::read(void* data, int len)
 {
+    if(!checkState(CONNECTED)) {
+        LOG_WARN << "state check failed, fd" << to_string(_sockfd).c_str();
+        return -1;
+    }
+        
     int size = ::recv(_sockfd, (char*)data, len, 0);
 	if(-1 == size)
     {
@@ -120,6 +222,11 @@ int Socket::read(void* data, int len)
 
 int Socket::write(void* data, int len)
 {
+    if(!checkState(CONNECTED)) {
+        LOG_WARN << "state check failed, fd" << to_string(_sockfd).c_str();
+        return -1;
+    }
+    
     int size = ::send(_sockfd, (char*)data, len, 0);
     if(-1 == size)
     {
@@ -141,6 +248,9 @@ int Socket::write(void* data, int len)
 
 void Socket::close()
 {
+    if(!turnTo(CLOSED))
+        return;
+
     string log = "a socket close, fd:" + to_string(_sockfd);
     LOG_NORMAL << log.c_str();
     

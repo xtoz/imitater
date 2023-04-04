@@ -8,7 +8,7 @@
 using namespace imitater;
 using namespace std;
 
-LoggerAgent::LoggerAgent(const char* fileName, char codeLine, const char* function, LogLevel level)
+LoggerAgent::LoggerAgent(const char* fileName, const char* function, LogLevel level)
 {
     ::memset(_prefix, '\0', PREFIX_LEN);
 
@@ -25,8 +25,8 @@ LoggerAgent::LoggerAgent(const char* fileName, char codeLine, const char* functi
     time_t now = time(0); char* dt = ctime(&now); dt[strlen(dt) - 1] = '\0';    // replace last char may be danger since strlen can return 0.
 
     // construct prefix: time + file + codeline + function
-    sprintf_s(_prefix, sizeof(_prefix), "%s, Level: %s, File: %s, Line: %c, Function: %s. Content: ",
-              dt, levelToStr(level), fileName, codeLine, function);
+    sprintf_s(_prefix, sizeof(_prefix), "%s, Level: %s, File: %s, Function: %s. Content: ",
+              dt, levelToStr(level), fileName, function);
 
     Logger::getInstace()->log(_prefix);
 }

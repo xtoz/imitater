@@ -4,23 +4,23 @@
 #include "EventLoop.h"
 #include "Buffer.h"
 #include "Uncopyable.h"
+#include "StateMachine.h"
 
 namespace imitater
 {
-class TcpConnection : public uncopyable, public std::enable_shared_from_this<TcpConnection>    // enable_shared seems must be public
+enum TcpConnState {TCPCONN_UNDEFINED, TCPCONN_WAITINIT ,TCPCONN_CONNECTED, TCPCONN_CLOSED};
+class TcpConnection : uncopyable, public StateMachine<TcpConnState>, public std::enable_shared_from_this<TcpConnection>    // enable_shared seems must be public
 {
 public:
     typedef std::shared_ptr<TcpConnection> TcpConnectionPtr;
     typedef std::function<void(TcpConnectionPtr)> InitedCallback;
 
-    explicit TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
+    TcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop);
     ~TcpConnection();
 
     typedef std::function<void(void)> ReadCallback;
     typedef std::function<void(void)> WriteCallback;
     typedef std::function<void(void)> CloseCallback;
-
-    enum TcpConnState {Undefined, Connected, Closing, Closed};
 
     void setReadCallback(ReadCallback cb);  // no consider about multi-thread, user should be careful. Why not consider? because we
     void setWriteCallback(WriteCallback cb);// even do not know when user object destroied (and here do not require smart ptr), so
@@ -34,7 +34,6 @@ public:
     void read(void* data, int len); // multi-thread considered
     void write(void* data, int len);
     void close();
-    int state() const;
 
     static TcpConnectionPtr createTcpConnection(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
     static TcpConnectionPtr reusedTcpConnection(TcpConnectionPtr conn, Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
@@ -51,7 +50,6 @@ private:
     char* _sockWriteBuffer; // consider [pass pointer of _writeBuffur] to abort this;
     Buffer _readBuffer;
     Buffer _writeBuffer;
-    TcpConnState _state;    // only use in loop func (include IO loop func and execInLoop func)
 
     void handleRead();
     void handlWrite();
@@ -65,6 +63,9 @@ private:
     void reused(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
     void reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb);
     void reusedInLoop2(InitedCallback cb);
+
+    bool turnTo(TcpConnState state) override;
+    bool checkState(TcpConnState state);
 };
 }
 

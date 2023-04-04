@@ -52,6 +52,10 @@ void Acceptor::listenInLoop()
 TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
 {
     Socket::SocketPtr newSocket = _socketPtr->accept();
+    if(nullptr == newSocket) {
+        LOG_ERROR << "Accept a nullptr.";
+        return nullptr;
+    }
     // TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
     TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, EventLoopPool::getInstance()->getNextLoop(), _newConnectoinCallback);
     return conn;
