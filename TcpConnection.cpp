@@ -160,7 +160,7 @@ void TcpConnection::updateEventsInLoop(int events)
     // compare with shared_ptr in loop, callback ptr will be hold forever, so callback ptr must be weak_ptr;
     if (events & Eventor::EventRead)
     {
-        function<void(void)> callback = [weakObj = weak_from_this()]()
+        function<void(void)> callback = [weakObj = weak_from_this()]() -> void
         {
             if (auto obj = weakObj.lock())
                 obj->handleRead();
@@ -173,7 +173,7 @@ void TcpConnection::updateEventsInLoop(int events)
     }
     if(events & Eventor::EventWrite)
     {
-        function<void(void)> callback = [weakObj = weak_from_this()]()
+        function<void(void)> callback = [weakObj = weak_from_this()]() -> void
         {
             if (auto obj = weakObj.lock())
                 obj->handlWrite();
@@ -220,6 +220,9 @@ void TcpConnection::initInLoop(InitedCallback cb)
 
 void TcpConnection::reusedInLoop(Socket::SocketPtr socket, EventLoop::EventLoopPtr loop, InitedCallback cb)
 {
+    if(checkState(CONNECTED)) {
+        handleClose();
+    }
     if(!turnTo(WAITINIT)) {
         LOG_WARN << "Turn to WAITINIT failed.";
         return;

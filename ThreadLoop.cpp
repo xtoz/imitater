@@ -46,7 +46,7 @@ void ThreadLoop::run()
     {
         auto task = _taskQueue->popTask();
         _state = Working;
-        if (!task)
+        if (nullptr == task)    // empty task means end treadloop
             break;
         else
             task();
