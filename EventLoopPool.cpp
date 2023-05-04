@@ -1,5 +1,7 @@
 #include "EventLoopPool.h"
 
+#define Max_Loop_Num 1
+
 using namespace imitater;
 using namespace std;
 
@@ -16,7 +18,7 @@ void EventLoopPool::release()
 }
 
 EventLoopPool::EventLoopPool() :
-_maxLoopNum(4),
+_maxLoopNum(Max_Loop_Num),
 _trdPool(make_shared<ThreadPool>(_maxLoopNum, _maxLoopNum))
 {
     _curIndex = 0;
