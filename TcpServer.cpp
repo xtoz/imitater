@@ -14,7 +14,6 @@ _acceptorPtr(make_shared<Acceptor>(_loopPtr))
 void TcpServer::start()
 {
     _acceptorPtr->listen();
-    // _loopPtr->loop();
 }
 
 void TcpServer::setNewConnectionCallback(Acceptor::NewConnectionCallback cb)
