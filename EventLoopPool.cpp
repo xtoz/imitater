@@ -22,6 +22,7 @@ _maxLoopNum(Max_Loop_Num),
 _trdPool(make_shared<ThreadPool>(_maxLoopNum, _maxLoopNum))
 {
     _curIndex = 0;
+    _curLoopNum = 0;
     _trdPool->createCoreThreads();
 }
 
@@ -33,15 +34,15 @@ EventLoopPool::~EventLoopPool()
 EventLoop::EventLoopPtr EventLoopPool::getNextLoop()
 {
     unique_lock<mutex> lock(_loopArrMtx);
-    if(_loopVec.size() < _maxLoopNum)
+    if(_curLoopNum < _maxLoopNum)
     {
-        // TODO: now eventlooppool exist forever, so 'this' donnot have problem.
+        _curLoopNum++;
+        // now eventlooppool exist forever, so 'this' donnot have problem.
         _trdPool->pushTask(bind(&EventLoopPool::createAndExecLoop, this));
         _loopArrCond.wait(lock);
     }
 
-    _curIndex = _curIndex % _loopVec.size();
-    LOG_NORMAL << "Current return loop : "<< to_string(_curIndex).c_str();
+    _curIndex = _curIndex % _curLoopNum;
     EventLoop::EventLoopPtr retPtr = _loopVec[_curIndex++];
     return retPtr;
 }

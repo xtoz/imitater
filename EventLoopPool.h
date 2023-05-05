@@ -21,6 +21,7 @@ private:
     static EventLoopPool* _eventLoopPool;
     int _curIndex;
     const int _maxLoopNum;
+    int _curLoopNum;
     std::vector<EventLoop::EventLoopPtr> _loopVec;
     std::mutex _loopArrMtx;
     std::condition_variable _loopArrCond;
