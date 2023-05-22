@@ -33,7 +33,7 @@ void Acceptor::hadnleRead()
 {
     TcpConnection::TcpConnectionPtr newConn = acceptNewConnection();
     
-    // if(_newConnectoinCallback) // let tcp conn call this, since tcp conn have his own init action and need
+    // if(_newConnectoinCallback) // let tcp conn call this, since tcp conn may have asyn init action and need
     //     _newConnectoinCallback(newConn); // to be finished in other thread, acceptor do not know when it finish init.
 }
 
@@ -56,7 +56,6 @@ TcpConnection::TcpConnectionPtr Acceptor::acceptNewConnection()
         LOG_ERROR << "Accept a nullptr.";
         return nullptr;
     }
-    // TcpConnection::TcpConnectionPtr conn = make_shared<TcpConnection>(newSocket, _loopPtr);
-    TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, EventLoopPool::getInstance()->getNextLoop(), _newConnectoinCallback);
+    TcpConnection::TcpConnectionPtr conn = TcpConnectionPool::getInstance()->getTcpConnection(newSocket, _loopPtr, _newConnectoinCallback);
     return conn;
 }

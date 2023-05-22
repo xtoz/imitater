@@ -10,7 +10,8 @@ namespace imitater
 class TcpServer : uncopyable
 {
 public:
-    explicit TcpServer();
+    enum ThreadMode {USER_THREAD, SINGLE_THREAD, MULTI_THREAD};
+    TcpServer(ThreadMode threadMode=USER_THREAD);
 
     void start();
     void setNewConnectionCallback(Acceptor::NewConnectionCallback cb);
@@ -18,6 +19,7 @@ public:
 private:
     EventLoop::EventLoopPtr _loopPtr;
     Acceptor::AcceptorPtr _acceptorPtr;
+    ThreadMode _threadMode;
 };
 }
 
