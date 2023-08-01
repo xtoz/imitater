@@ -1,3 +1,4 @@
+#include <windows>
 #include "ThreadPool.h"
 
 using namespace imitater;
@@ -8,6 +9,12 @@ _coreSize(coreSize),
 _maxSize(maxSize),
 _taskQueue(make_shared<TaskQueue<ThreadLoop::Task>>(_maxSize))
 {
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    if(!_coreSize)
+        _coreSize=sysInfo.dwNumberOfProcessors;
+    if(_maxSize<_coreSize)
+        _maxSize=_coreSize;
     _threads.reserve(_maxSize);
     // TODO:consider create core thread when needed, for example, no waiting state thread and new task come.
 }
